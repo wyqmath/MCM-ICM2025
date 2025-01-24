@@ -36,7 +36,8 @@ class TemporalTransformer(nn.Module):
             d_model=d_model,
             nhead=nhead,
             dim_feedforward=dim_feedforward,
-            dropout=dropout
+            dropout=dropout,
+            batch_first=True  # 确保 batch_first=True
         )
         self.transformer_encoder = TransformerEncoder(
             encoder_layer,
@@ -48,7 +49,7 @@ class TemporalTransformer(nn.Module):
         self.output_layer = nn.Linear(d_model, 1)
         
     def create_positional_encoding(self):
-        max_seq_len = 1000  # 可以根据需要调整
+        max_seq_len = 1000  # 根据需要调整
         pe = torch.zeros(max_seq_len, self.d_model)
         position = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * (-math.log(10000.0) / self.d_model))
@@ -60,87 +61,179 @@ class TemporalTransformer(nn.Module):
         # 确保输入维度正确
         if x.dim() == 2:
             batch_size, features = x.size()
-            # 如果特征维度不等于d_model，进行投影
+            # 如果特征维度不等于 d_model，进行投影
             if features != self.d_model:
                 x = nn.Linear(features, self.d_model)(x)
-            # 添加序列维度
-            x = x.unsqueeze(0)  # [1, batch_size, d_model]
+            # 添加序列维度并保持 batch_first=True 格式
+            x = x.unsqueeze(1)  # [batch_size, 1, d_model]
         
-        seq_len = x.size(0)
+        seq_len = x.size(1)
         pos_enc = self.positional_encoding[:seq_len, :].to(x.device)
         
-        # 添加位置编码
-        x = x + pos_enc.unsqueeze(1)  # 广播到batch维度
+        # 添加位置编码 (适配 batch_first=True)
+        x = x + pos_enc.unsqueeze(0)  # 广播到 batch 维度
         
-        # Transformer编码
+        # Transformer 编码
         output = self.transformer_encoder(x)
         
         # 取序列的平均值
-        output = output.mean(dim=0)  # [batch_size, d_model]
+        output = output.mean(dim=1)  # [batch_size, d_model]
         
         # 通过输出层得到最终预测
         output = self.output_layer(output)  # [batch_size, 1]
         
+        # 扩展到 [batch_size, num_nodes, 1]，假设 num_nodes=144
+        num_nodes = 144
+        output = output.unsqueeze(1).repeat(1, num_nodes, 1)  # [batch_size, num_nodes, 1]
+        
+        #print(f"TemporalTransformer Output Shape: {output.shape}")  # 调试信息
         return output
 
 class STGCN_LSTM(nn.Module):
     def __init__(self, node_feat_dim, edge_feat_dim, hidden_dim, num_layers, num_heads):
         super(STGCN_LSTM, self).__init__()
         self.node_feat_dim = node_feat_dim
-        self.edge_feat_dim = edge_feat_dim
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         self.num_heads = num_heads
         
-        # Graph attention layers
-        self.gat_layers = nn.ModuleList([
-            GATConv(node_feat_dim if i == 0 else hidden_dim * num_heads,
-                   hidden_dim, heads=num_heads)
-            for i in range(num_layers)
-        ])
+        # 1. 图注意力层保持不变
+        self.gat_layers = nn.ModuleList()
+        for i in range(num_layers):
+            in_channels = node_feat_dim if i == 0 else hidden_dim * num_heads
+            self.gat_layers.append(GATConv(
+                in_channels,
+                hidden_dim,
+                heads=num_heads,
+                dropout=0.1
+            ))
+            self.gat_layers.append(nn.LayerNorm(hidden_dim * num_heads))
+            self.gat_layers.append(nn.Dropout(0.1))
+            self.gat_layers.append(Swish())
         
-        # LSTM for temporal modeling
-        self.lstm = nn.LSTM(hidden_dim * num_heads, hidden_dim, 
-                           num_layers=1, batch_first=True)
+        # 2. 特征融合门控机制
+        self.fusion_gate = nn.Sequential(
+            nn.Linear(2 * hidden_dim * num_heads, hidden_dim * num_heads),
+            nn.LayerNorm(hidden_dim * num_heads),
+            Swish(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim * num_heads, hidden_dim * num_heads),
+            nn.Sigmoid()
+        )
         
-        # Output layer - predict for all nodes
-        self.fc = nn.Linear(hidden_dim, node_feat_dim)
+        # 3. 修改LSTM层的隐藏维度
+        lstm_hidden = hidden_dim * num_heads  # 确保与GAT输出维度匹配
+        self.lstm = nn.LSTM(
+            input_size=lstm_hidden,
+            hidden_size=lstm_hidden // 2,  # 减半以适应双向LSTM
+            num_layers=2,
+            bidirectional=True,
+            batch_first=True,
+            dropout=0.2
+        )
         
+        # 4. 修改时序注意力层的维度
+        self.temporal_attention = nn.MultiheadAttention(
+            embed_dim=lstm_hidden,  # 现在与LSTM输出维度匹配
+            num_heads=4,
+            dropout=0.1
+        )
+        
+        # 5. 修改层归一化的维度
+        self.layer_norm1 = nn.LayerNorm(lstm_hidden)
+        self.layer_norm2 = nn.LayerNorm(lstm_hidden)
+        
+        # 6. 修改Highway连接的维度
+        self.highway = nn.Sequential(
+            nn.Linear(lstm_hidden, lstm_hidden),
+            nn.Sigmoid()
+        )
+        
+        # 7. 修改输出层的维度
+        self.fc = nn.Sequential(
+            nn.Linear(lstm_hidden, hidden_dim),
+            Swish(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, 1)
+        )
+        
+        # 8. 初始化参数
+        self._init_weights()
+    
+    def _init_weights(self):
+        """使用改进的初始化方案"""
+        for name, param in self.named_parameters():
+            if 'weight' in name:
+                if len(param.shape) >= 2:
+                    nn.init.kaiming_normal_(param, nonlinearity='relu')
+                else:
+                    nn.init.normal_(param, mean=0.0, std=0.02)
+            elif 'bias' in name:
+                nn.init.zeros_(param)
+    
     def forward(self, x, edge_index, edge_attr, seq_length):
-        # 空间建模
-        batch_size = x.size(0) if x.dim() == 3 else 1
-        num_nodes = x.size(1) if x.dim() == 3 else x.size(0)
-        node_feat_dim = x.size(2) if x.dim() == 3 else x.size(1)
-        
-        # 确保输入维度正确 [num_nodes, node_feat_dim] 或 [batch_size, num_nodes, node_feat_dim]
-        if x.dim() == 3:
-            # 处理批量数据
-            h = x.view(-1, node_feat_dim)  # [batch_size * num_nodes, node_feat_dim]
+        # 确保输入维度正确
+        if x.dim() == 2:
+            batch_size = 1
+            num_nodes = x.size(0)
+            x = x.unsqueeze(0)  # 添加batch维度 [1, num_nodes, node_feat_dim]
         else:
-            h = x  # [num_nodes, node_feat_dim]
+            batch_size = x.size(0)
+            num_nodes = x.size(1)
         
-        # 图注意力层
-        for i in range(self.num_layers):
-            h = F.elu(self.gat_layers[i](h, edge_index, edge_attr))
+        # 1. 空间特征提取
+        h = x.view(-1, self.node_feat_dim)  # [batch_size * num_nodes, node_feat_dim]
         
-        # 时间建模
-        feature_dim = self.hidden_dim * self.num_heads
+        # 存储每层的特征用于残差连接
+        residuals = []
         
-        # 恢复批量维度
-        h = h.view(batch_size, num_nodes, feature_dim)
+        # 图注意力层处理
+        for i in range(0, len(self.gat_layers), 4):
+            residual = h
+            h = self.gat_layers[i](h, edge_index, edge_attr)
+            h = self.gat_layers[i+1](h)
+            h = self.gat_layers[i+2](h)
+            h = self.gat_layers[i+3](h)
+            
+            if h.size() == residual.size():
+                h = h + residual
+            residuals.append(h)
         
-        # LSTM处理
-        lstm_out, _ = self.lstm(h)
+        # 2. 特征融合
+        h = h.view(batch_size, num_nodes, -1)  # [batch_size, num_nodes, hidden_dim * num_heads]
         
-        # 最终预测 - 确保输出维度与输入节点数量匹配
-        out = self.fc(lstm_out[:, -1, :])  # 使用最后一个时间步的输出
-        # 确保输出维度正确
-        if out.size(1) != num_nodes:
-            # 如果维度不匹配，使用线性变换调整
-            out = nn.Linear(out.size(1), num_nodes)(out)
-        out = out.view(batch_size, num_nodes)  # 输出形状 [batch_size, num_nodes]
+        # 3. 双向LSTM处理
+        lstm_out, _ = self.lstm(h)  # [batch_size, num_nodes, lstm_hidden]
         
+        # 4. 时序注意力机制
+        attn_out, _ = self.temporal_attention(
+            lstm_out.transpose(0, 1),
+            lstm_out.transpose(0, 1),
+            lstm_out.transpose(0, 1)
+        )
+        attn_out = attn_out.transpose(0, 1)
+        
+        # 5. 残差连接和层归一化
+        out = self.layer_norm1(lstm_out + attn_out)
+        
+        # 6. Highway连接
+        gate = self.highway(out)
+        highway_out = gate * out + (1 - gate) * h
+        
+        # 7. 最终输出层
+        out = self.layer_norm2(highway_out)
+        out = self.fc(out.view(batch_size * num_nodes, -1))  # [batch_size * num_nodes, 1]
+        
+        # 重塑输出以匹配目标维度 [batch_size, num_nodes, 1]
+        out = out.view(batch_size, num_nodes, 1)
+        
+        #print(f"STGCN_LSTM Output Shape: {out.shape}")  # 调试信息
         return out
+
+# 添加Swish激活函数
+class Swish(nn.Module):
+    def forward(self, x):
+        return x * torch.sigmoid(x)
 
 def handle_nan_values(data):
     """处理数据中的NaN值，确保所有NaN都被处理"""
@@ -154,27 +247,50 @@ def handle_nan_values(data):
         # 如果仍然有NaN，用0填充
         return filled_data.fillna(0)
     elif isinstance(data, torch.Tensor):
-        # 将Tensor转换为DataFrame进行处理
-        df = pd.DataFrame(data.numpy())
-        filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
-        # 使用前向填充
-        filled_df = filled_df.ffill()
-        # 使用后向填充
-        filled_df = filled_df.bfill()
-        # 如果仍然有NaN，用0填充
-        filled_df = filled_df.fillna(0)
-        return torch.tensor(filled_df.values, dtype=data.dtype)
+        # 检查数据维度
+        if data.dim() == 3:
+            batch_size, num_nodes, num_features = data.size()
+            # 重塑为二维 [batch_size * num_nodes, num_features]
+            reshaped_data = data.view(-1, data.size(-1))
+            # 转换为DataFrame进行处理
+            df = pd.DataFrame(reshaped_data.numpy())
+            filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
+            filled_df = filled_df.ffill()
+            filled_df = filled_df.bfill()
+            filled_df = filled_df.fillna(0)
+            # 转换回Tensor并重塑为原始形状
+            filled_tensor = torch.tensor(filled_df.values, dtype=data.dtype).view(batch_size, num_nodes, num_features)
+            return filled_tensor
+        elif data.dim() == 2:
+            df = pd.DataFrame(data.numpy())
+            filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
+            filled_df = filled_df.ffill()
+            filled_df = filled_df.bfill()
+            filled_df = filled_df.fillna(0)
+            return torch.tensor(filled_df.values, dtype=data.dtype)
+        else:
+            raise ValueError(f"Unsupported tensor dimensions: {data.dim()}")
     elif isinstance(data, np.ndarray):
         # 将numpy数组转换为DataFrame处理
-        df = pd.DataFrame(data)
-        filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
-        # 使用前向填充
-        filled_df = filled_df.ffill()
-        # 使用后向填充
-        filled_df = filled_df.bfill()
-        # 如果仍然有NaN，用0填充
-        filled_df = filled_df.fillna(0)
-        return filled_df.values
+        if data.ndim == 3:
+            batch_size, num_nodes, num_features = data.shape
+            reshaped_data = data.reshape(-1, data.shape[-1])
+            df = pd.DataFrame(reshaped_data)
+            filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
+            filled_df = filled_df.ffill()
+            filled_df = filled_df.bfill()
+            filled_df = filled_df.fillna(0)
+            filled_tensor = torch.tensor(filled_df.values, dtype=torch.float32).view(batch_size, num_nodes, num_features)
+            return filled_tensor
+        elif data.ndim == 2:
+            df = pd.DataFrame(data)
+            filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
+            filled_df = filled_df.ffill()
+            filled_df = filled_df.bfill()
+            filled_df = filled_df.fillna(0)
+            return filled_df.values
+        else:
+            raise ValueError(f"Unsupported numpy array dimensions: {data.ndim}")
     else:
         raise ValueError("Unsupported data type for NaN handling")
 
@@ -196,7 +312,7 @@ class DeepEnsemble:
         
     def normalize_data(self, data):
         # Normalize node features
-        data.x = (data.x - data.x.mean(dim=0)) / (data.x.std(dim=0) + 1e-8)
+        data.x = (data.x - data.x.mean(dim=(0, 1))) / (data.x.std(dim=(0, 1), unbiased=False) + 1e-8)
         
         # Normalize edge attributes
         data.edge_attr = (data.edge_attr - data.edge_attr.mean()) / (data.edge_attr.std() + 1e-8)
@@ -226,26 +342,36 @@ class DeepEnsemble:
             print(f"处理边属性中的NaN值: {torch.isnan(data.edge_attr).sum().item()}")
             data.edge_attr = handle_nan_values(data.edge_attr)
             print(f"处理后的NaN值数量: {torch.isnan(data.edge_attr).sum().item()}")
-
-        criterion = nn.MSELoss()
-        optimizer = torch.optim.Adam(self.models[0].parameters(),
-                                   lr=lr,
-                                   weight_decay=1e-5)
         
-        # 修改 lr_scheduler，移除 verbose 参数
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer,
-            mode='min',
-            factor=0.5,
-            patience=10
+        # 数据归一化
+        data = self.normalize_data(data)
+        
+        criterion = nn.MSELoss()
+        optimizer = torch.optim.AdamW(
+            self.models[0].parameters(),
+            lr=lr,
+            weight_decay=0.01,
+            betas=(0.9, 0.999)
         )
         
         # 转换数据为DataLoader
         from torch_geometric.loader import DataLoader as GeometricDataLoader
         train_loader = GeometricDataLoader([data], batch_size=1, shuffle=True)
         
-        # 训练STGCN-LSTM
+        # 使用 OneCycleLR 调度器
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer,
+            max_lr=lr,
+            epochs=epochs,
+            steps_per_epoch=len(train_loader),
+            pct_start=0.3,
+            anneal_strategy='cos'
+        )
+        
+        # 训练 STGCN-LSTM
         self.models[0].train()
+        grad_norms = []
+        activation_stats = []
         for epoch in range(epochs):
             epoch_loss = 0.0
             valid_batches = 0
@@ -254,89 +380,97 @@ class DeepEnsemble:
                 try:
                     optimizer.zero_grad()
                     
-                    outputs = self.models[0](
-                        batch.x,
-                        batch.edge_index,
-                        batch.edge_attr,
-                        seq_length=10
-                    )
-                    
-                    target = batch.y.view(outputs.size())
-                    
-                    # 验证输出和目标
-                    if not (torch.isnan(outputs).any() or torch.isnan(target).any()):
+                    # 记录梯度和激活值统计
+                    with torch.set_grad_enabled(True):
+                        outputs = self.models[0](
+                            batch.x,
+                            batch.edge_index,
+                            batch.edge_attr,
+                            seq_length=10
+                        )
+                        
+                        # 确保目标形状与输出一致
+                        target = batch.y.view_as(outputs)  # [batch_size, num_nodes, 1]
                         loss = criterion(outputs, target)
                         
-                        # 检查损失值是否合理
-                        if not torch.isnan(loss) and not torch.isinf(loss):
-                            loss.backward()
-                            # 梯度裁剪
-                            torch.nn.utils.clip_grad_norm_(self.models[0].parameters(), max_norm=1.0)
-                            optimizer.step()
-                            
-                            epoch_loss += loss.item()
-                            valid_batches += 1
-                        else:
-                            print(f"Epoch [{epoch+1}] 警告：损失值异常 {loss.item()}")
-                    else:
-                        print(f"Epoch [{epoch+1}] 警告：输出或目标包含NaN值")
-                        # 处理NaN值
-                        batch.x = handle_nan_values(batch.x)
-                        batch.y = handle_nan_values(batch.y)
-                    
+                        # 反向传播
+                        loss.backward()
+                        
+                        # 记录梯度范数
+                        total_norm = 0
+                        for p in self.models[0].parameters():
+                            if p.grad is not None:
+                                param_norm = p.grad.data.norm(2)
+                                total_norm += param_norm.item() ** 2
+                        total_norm = total_norm ** 0.5
+                        grad_norms.append(total_norm)
+                        
+                        # 梯度裁剪
+                        torch.nn.utils.clip_grad_norm_(
+                            self.models[0].parameters(),
+                            max_norm=1.0
+                        )
+                        
+                        optimizer.step()
+                        scheduler.step()
+                        
+                        epoch_loss += loss.item()
+                        valid_batches += 1
+                        
                 except Exception as e:
                     print(f"Epoch [{epoch+1}] 错误：{str(e)}")
                     continue
             
+            # 输出训练统计信息
             if valid_batches > 0:
                 avg_loss = epoch_loss / valid_batches
                 if (epoch+1) % 10 == 0:
-                    print(f'Epoch [{epoch+1}/{epochs}], 平均损失: {avg_loss:.4f}')
-            else:
-                print(f"Epoch [{epoch+1}/{epochs}] 警告：没有有效的批次")
+                    print(f'Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}, '
+                          f'Grad Norm: {total_norm:.4f}, '
+                          f'LR: {scheduler.get_last_lr()[0]:.6f}')
         
-        # Train other models
-        X = data.x.numpy()
-        y = data.y.numpy()
+        # 训练 TemporalTransformer
+        temporal_model = self.models[3]
+        temporal_model.train()
+        temporal_optimizer = torch.optim.Adam(temporal_model.parameters(), lr=lr)
+        temporal_criterion = nn.MSELoss()
+        
+        for epoch in range(epochs):
+            try:
+                temporal_optimizer.zero_grad()
+                temporal_input = data.x.float()  # [batch_size, num_nodes, features]
+                temporal_pred = temporal_model(temporal_input)  # [batch_size, num_nodes, 1]
+                target = data.y.view_as(temporal_pred)  # [batch_size, num_nodes, 1]
+                temporal_loss = temporal_criterion(temporal_pred, target)
+                temporal_loss.backward()
+                temporal_optimizer.step()
+                
+                if (epoch + 1) % 10 == 0:
+                    print(f'Temporal Transformer Epoch [{epoch+1}/{epochs}], Loss: {temporal_loss.item():.4f}')
+            except Exception as e:
+                print(f"Temporal Transformer Epoch [{epoch+1}] 错误：{str(e)}")
+                continue
+        
+        # 训练其他模型
+        X = data.x.numpy().reshape(data.x.size(0) * data.x.size(1), data.x.size(2))
+        y = data.y.numpy().reshape(data.y.size(0) * data.y.size(1), 1)
         
         # 确保没有NaN值
         if np.isnan(y).any():
             print("处理目标变量中的NaN值")
-            y = handle_nan_values(y)
+            y = handle_nan_values(torch.tensor(y)).numpy()
         
         if np.isnan(X).any():
             print("处理输入特征中的NaN值")
-            X = handle_nan_values(X)
+            X = handle_nan_values(torch.tensor(X)).numpy()
         
-        # 确保y是一维数组
+        # 确保 y 是一维数组
         y = y.ravel()
         
         self.models[1].fit(X, y)
         
         # XGBoost
         self.models[2].fit(X, y)
-        
-        # 训练时间编码Transformer
-        self.models[3].train()
-        temporal_optimizer = torch.optim.Adam(self.models[3].parameters(), lr=lr)
-        temporal_criterion = nn.MSELoss()
-        
-        for epoch in range(epochs):
-            temporal_optimizer.zero_grad()
-            # 确保输入数据维度正确
-            temporal_input = data.x
-            if temporal_input.dim() == 2:
-                temporal_input = temporal_input.float()  # 确保数据类型正确
-            
-            temporal_pred = self.models[3](temporal_input)
-            # 确保目标维度匹配
-            target = data.y.view(temporal_pred.size())
-            temporal_loss = temporal_criterion(temporal_pred, target)
-            temporal_loss.backward()
-            temporal_optimizer.step()
-            
-            if (epoch + 1) % 10 == 0:
-                print(f'Temporal Transformer Epoch [{epoch+1}/{epochs}], Loss: {temporal_loss.item():.4f}')
         
     def save_models(self, path):
         try:
@@ -355,7 +489,7 @@ class DeepEnsemble:
         
     def predict(self, graph_data):
         predictions = []
-        target_shape = (graph_data.x.size(0), 1)
+        target_shape = (graph_data.x.size(0), graph_data.x.size(1), 1)  # [batch_size, num_nodes, 1]
 
         for i, model in enumerate(self.models):
             try:
@@ -368,13 +502,17 @@ class DeepEnsemble:
                                 graph_data.edge_index,
                                 graph_data.edge_attr,
                                 seq_length=10
-                            )
+                            )  # [batch_size, num_nodes, 1]
                         else:  # TemporalTransformer
-                            pred = model(graph_data.x)
+                            pred = model(graph_data.x)  # [batch_size, num_nodes, 1]
                 else:
-                    pred = model.predict(graph_data.x.numpy())
+                    pred = model.predict(graph_data.x.numpy().reshape(graph_data.x.size(0) * graph_data.x.size(1), graph_data.x.size(2)))
+                    pred = pred.reshape(target_shape)
                 
                 # 确保预测形状正确
+                if isinstance(model, nn.Module):
+                    pred = pred.cpu().numpy()
+                
                 if pred.shape != target_shape:
                     pred = pred.reshape(target_shape)
                     
@@ -384,10 +522,11 @@ class DeepEnsemble:
                 predictions.append(np.zeros(target_shape))
         
         # 堆叠预测并计算分位数
-        predictions = np.stack(predictions, axis=0)
+        predictions = np.stack(predictions, axis=0)  # [num_models, batch_size, num_nodes, 1]
         lower = np.quantile(predictions, 0.05, axis=0)
         upper = np.quantile(predictions, 0.95, axis=0)
-        return np.mean(predictions, axis=0), (lower, upper)
+        mean_pred = np.mean(predictions, axis=0)
+        return mean_pred, (lower, upper)
 
     def validate_data(self, data):
         """验证数据完整性和质量"""
@@ -565,10 +704,13 @@ def build_spatio_temporal_graph(
     
     # 创建目标标签
     target_weights = torch.randn(node_features.size(1), 1)
-    y = node_features @ target_weights
+    y = node_features @ target_weights  # [num_nodes, 1]
+    
+    # 扩展 y 到 [batch_size, num_nodes, 1]，假设 batch_size=1
+    y = y.unsqueeze(0)  # [1, num_nodes, 1]
     
     return Data(
-        x=node_features,
+        x=node_features.unsqueeze(0),  # [1, num_nodes, feature_dim]
         edge_index=edge_index,
         edge_attr=edge_attr,
         y=y
@@ -708,10 +850,19 @@ if __name__ == "__main__":
     data_loader = OlympicDataLoader('c:/Users/Administrator/Desktop/美赛')
     model = DeepEnsemble()
     graph_data = data_loader.get_graph_data()
-    graph_data = model.normalize_data(graph_data)  # Add data normalization
+    graph_data = model.normalize_data(graph_data)  # 数据归一化
     model.train(graph_data)
     pred, (lower, upper) = model.predict(graph_data)
-
-    np.savetxt('predictions.csv', pred, delimiter=',')
-    np.savetxt('uncertainty_lower.csv', lower, delimiter=',')
-    np.savetxt('uncertainty_upper.csv', upper, delimiter=',')
+    
+    #print(f"预测结果形状: {pred.shape}")
+    #print(f"下限形状: {lower.shape}")
+    #print(f"上限形状: {upper.shape}")
+    
+    # 将预测结果从 [1, 144, 1] 转换为 [144, 1]
+    pred_2d = pred.squeeze().reshape(-1, 1)  # [144, 1]
+    lower_2d = lower.squeeze().reshape(-1, 1)  # [144, 1]
+    upper_2d = upper.squeeze().reshape(-1, 1)  # [144, 1]
+    
+    np.savetxt('predictions.csv', pred_2d, delimiter=',')
+    np.savetxt('uncertainty_lower.csv', lower_2d, delimiter=',')
+    np.savetxt('uncertainty_upper.csv', upper_2d, delimiter=',')
