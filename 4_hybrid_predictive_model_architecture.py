@@ -311,17 +311,24 @@ class DeepEnsemble:
         ]
         
     def normalize_data(self, data):
-        # Normalize node features
+        # 对节点特征进行标准化
         data.x = (data.x - data.x.mean(dim=(0, 1))) / (data.x.std(dim=(0, 1), unbiased=False) + 1e-8)
         
-        # Normalize edge attributes
+        # 对边属性进行标准化
         data.edge_attr = (data.edge_attr - data.edge_attr.mean()) / (data.edge_attr.std() + 1e-8)
         
-        # Normalize target values
-        data.y = (data.y - data.y.mean()) / (data.y.std() + 1e-8)
+        # 不对目标值进行归一化
+        # data.y 保持原始尺度
+        
+        # 打印统计信息以验证
+        #print("After normalization:")
+        #print(f"data.x - mean: {data.x.mean().item():.4f}, std: {data.x.std().item():.4f}")
+        #print(f"data.edge_attr - mean: {data.edge_attr.mean().item():.4f}, std: {data.edge_attr.std().item():.4f}")
+        #print(f"data.y - mean: {data.y.mean().item():.4f}, std: {data.y.std().item():.4f}")
+        
         return data
 
-    def train(self, data, epochs=100, lr=0.001, batch_size=32):
+    def train(self, data, epochs=100, lr=0.001, batch_size=32, l1_lambda=1e-5, l2_lambda=1e-4):
         # 预处理：确保所有数据都没有NaN值
         print("开始数据预处理...")
         
@@ -346,11 +353,13 @@ class DeepEnsemble:
         # 数据归一化
         data = self.normalize_data(data)
         
+        # 定义损失函数
         criterion = nn.MSELoss()
+        # 定义优化器，weight_decay 用于L2正则化
         optimizer = torch.optim.AdamW(
             self.models[0].parameters(),
             lr=lr,
-            weight_decay=0.01,
+            weight_decay=l2_lambda,  # L2 正则化系数
             betas=(0.9, 0.999)
         )
         
@@ -393,6 +402,10 @@ class DeepEnsemble:
                         target = batch.y.view_as(outputs)  # [batch_size, num_nodes, 1]
                         loss = criterion(outputs, target)
                         
+                        # 添加L1正则化
+                        l1_norm = sum(p.abs().sum() for p in self.models[0].parameters())
+                        loss = loss + l1_lambda * l1_norm
+                        
                         # 反向传播
                         loss.backward()
                         
@@ -428,6 +441,10 @@ class DeepEnsemble:
                     print(f'Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}, '
                           f'Grad Norm: {total_norm:.4f}, '
                           f'LR: {scheduler.get_last_lr()[0]:.6f}')
+                    
+                    # 打印部分预测和目标值，使用detach()
+                    #print("Sample predictions:", outputs[0][:5].cpu().detach().numpy().flatten())
+                    #print("Sample targets:", target[0][:5].cpu().detach().numpy().flatten())
         
         # 训练 TemporalTransformer
         temporal_model = self.models[3]
@@ -851,7 +868,7 @@ if __name__ == "__main__":
     model = DeepEnsemble()
     graph_data = data_loader.get_graph_data()
     graph_data = model.normalize_data(graph_data)  # 数据归一化
-    model.train(graph_data)
+    model.train(graph_data, epochs=100, lr=0.001, batch_size=32, l1_lambda=1e-5, l2_lambda=1e-4)
     pred, (lower, upper) = model.predict(graph_data)
     
     #print(f"预测结果形状: {pred.shape}")
