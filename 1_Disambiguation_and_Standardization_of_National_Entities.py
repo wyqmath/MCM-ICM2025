@@ -11,6 +11,19 @@ from tqdm import tqdm
 # 政权更迭映射表（核心知识库）
 HISTORICAL_MAPPING = {
     # Modern countries
+    'United States': ('USA', None),
+    'Great Britain': ('GBR', None),
+    'Trinidad and Tobago': ('TTO', None),
+    'Puerto Rico': ('PUR', None),
+    'Dominican Republic': ('DOM', None),
+    'Costa Rica': ('CRC', None),
+    'Virgin Islands': ('ISV', None),
+    'Saudi Arabia': ('KSA', None),
+    'Czech Republic': ('CZE', None),
+    'Mixed team': ('MIX', None),
+    'United Kingdom': ('GBR', None),
+    'South Africa': ('RSA', None),
+    'New Zealand': ('NZL', None),
     'Soviet Union': ('RUS', 1991),
     'East Germany': ('GER', 1990),
     'West Germany': ('GER', 1990),
@@ -23,11 +36,172 @@ HISTORICAL_MAPPING = {
     'United Team of Germany': ('GER', 1968),
     'British West Indies': ('JAM', 1962),  # Most athletes from Jamaica
     
-    # Special cases
-    'Mixed team': ('MIX', None),
+    # Additional mappings for missing IOC codes
+    'Ivory Coast': ('CIV', None),
+    'Côte d\'Ivoire': ('CIV', None),
+    'Chinese Taipei': ('TPE', None),
+    'Netherlands Antilles': ('AHO', None),
+    'Unified Team': ('EUN', 1992),
+    'Independent Olympic Athletes': ('IOA', None),
+    'Congo (Brazzaville)': ('CGO', None),
+    'Congo (Kinshasa)': ('COD', None),
+    'Federated States of Micronesia': ('FSM', None),
+    'Marshall Islands': ('MHL', None),
+    'Saint Vincent and the Grenadines': ('VIN', None),
+    'Cape Verde': ('CPV', None),
+    'Cabo Verde': ('CPV', None),
+    'Central African Republic': ('CAF', None),
+    'South Sudan': ('SSD', None),
+    'North Macedonia': ('MKD', None),
+    'Republic of Moldova': ('MDA', None),
+    'Brunei Darussalam': ('BRN', None),
+    'Serbia and Montenegro': ('SCG', 2006),
+    'Saint Lucia': ('LCA', None),
+    'San Marino': ('SMR', None),
+    'Central African Republic': ('CAF', None),
+    'São Tomé and Príncipe': ('STP', None),
+    'Sao Tome & Principe': ('STP', None),
+    'Sri Lanka': ('LKA', None),
+    'El Salvador': ('ESA', None),
+    'Saint Kitts and Nevis': ('SKN', None),
+    'Bosnia & Herzegovina': ('BIH', None),
+    'Bosnia and Herzegovina': ('BIH', None),
+    'Lao PDR': ('LAO', None),
+    'East Timor': ('TLS', None),
+    'Côte d\'Ivoire': ('CIV', None),
+    'Cote d\'Ivoire': ('CIV', None),
+    'Cayman Islands': ('CAY', None),
+    'Antigua and Barbuda': ('ANT', None),
+    'São Tomé and Príncipe': ('STP', None),
+    'Sao Tome & Principe': ('STP', None),
     'Independent Olympic Participants': ('IOP', None),
-    'Refugee Olympic Team': ('EOR', None),
+    'Refugee Olympic Team': ('ROT', None),
     'Individual Olympic Athletes': ('IOA', None),
+    'Refugee Olympic Athletes': ('ROA', None),
+    'São Tomé and Príncipe': ('STP', None),
+    'Sao Tome & Principe': ('STP', None),
+    'Timor Leste': ('TLS', None),
+    'East Timor': ('TLS', None),
+    'Centr Afric Re': ('CAF', None),
+    'Central African Republic': ('CAF', None),
+    'St Kitts and Nevis': ('SKN', None),
+    'Saint Kitts and Nevis': ('SKN', None),
+    'São Tomé and Príncipe': ('STP', None),
+    'Sao Tome & Principe': ('STP', None),
+    'St. Lucia': ('LCA', None),
+    'Saint Vincent and the Grenadines': ('VIN', None),
+    'United Arab Emirates': ('UAE', None),
+    'UA Emirates': ('UAE', None),
+    'Cook Islands': ('COK', None),
+    'Solomon Islands': ('SOL', None),
+    'Tuvalu': ('TUV', None),
+    'Kiribati': ('KIR', None),
+    'Palau': ('PLW', None),
+    'Nauru': ('NRU', None),
+    'Samoa': ('SAM', None),
+    'Tonga': ('TGA', None),
+    'Vanuatu': ('VAN', None),
+    'Comoros': ('COM', None),
+    'Seychelles': ('SEY', None),
+    'Maldives': ('MDV', None),
+    'Bhutan': ('BHU', None),
+    'Laos': ('LAO', None),
+    'Myanmar': ('MYA', None),
+    'Cambodia': ('CAM', None),
+    'Afghanistan': ('AFG', None),
+    'Yemen': ('YEM', None),
+    'Oman': ('OMA', None),
+    'Qatar': ('QAT', None),
+    'Bahrain': ('BRN', None),
+    'Kuwait': ('KUW', None),
+    'Jordan': ('JOR', None),
+    'Lebanon': ('LBN', None),
+    'Syria': ('SYR', None),
+    'Iraq': ('IRQ', None),
+    'Iran': ('IRI', None),
+    'IR Iran': ('IRI', None),
+    'Türkiye': ('TUR', None),
+    'Azerbaijan': ('AZE', None),
+    'Georgia': ('GEO', None),
+    'Armenia': ('ARM', None),
+    'Kazakhstan': ('KAZ', None),
+    'Uzbekistan': ('UZB', None),
+    'Turkmenistan': ('TKM', None),
+    'Tajikistan': ('TJK', None),
+    'Kyrgyzstan': ('KGZ', None),
+    'Mongolia': ('MGL', None),
+    'North Korea': ('PRK', None),
+    'DPR Korea': ('PRK', None),
+    'South Korea': ('KOR', None),
+    'Korea': ('KOR', None),
+    'Hong Kong': ('HKG', None),
+    'Hong Kong, China': ('HKG', None),
+    'Macau': ('MAC', None),
+    'Taiwan': ('TPE', None),
+    'Formosa': ('TPE', None),
+    'Palestine': ('PLE', None),
+    'Western Sahara': ('ESH', None),
+    'Somalia': ('SOM', None),
+    'Djibouti': ('DJI', None),
+    'Eritrea': ('ERI', None),
+    'Sudan': ('SUD', None),
+    'South Sudan': ('SSD', None),
+    'Chad': ('CHA', None),
+    'Niger': ('NIG', None),
+    'Mali': ('MLI', None),
+    'Burkina Faso': ('BUR', None),
+    'Benin': ('BEN', None),
+    'Togo': ('TOG', None),
+    'Ghana': ('GHA', None),
+    'Côte d\'Ivoire': ('CIV', None),
+    'Liberia': ('LBR', None),
+    'Sierra Leone': ('SLE', None),
+    'Guinea': ('GUI', None),
+    'Guinea-Bissau': ('GBS', None),
+    'Gambia': ('GAM', None),
+    'The Gambia': ('GAM', None),
+    'Senegal': ('SEN', None),
+    'Mauritania': ('MTN', None),
+    'Cape Verde': ('CPV', None),
+    'Cabo Verde': ('CPV', None),
+    'São Tomé and Príncipe': ('STP', None),
+    'Sao Tome & Principe': ('STP', None),
+    'Equatorial Guinea': ('GEQ', None),
+    'Gabon': ('GAB', None),
+    'Republic of the Congo': ('CGO', None),
+    'Democratic Republic of the Congo': ('COD', None),
+    'DR Congo': ('COD', None),
+    'Central African Republic': ('CAF', None),
+    'Cameroon': ('CMR', None),
+    'Nigeria': ('NGR', None),
+    'Niger': ('NIG', None),
+    'Chad': ('CHA', None),
+    'Sudan': ('SUD', None),
+    'South Sudan': ('SSD', None),
+    'Eritrea': ('ERI', None),
+    'Ethiopia': ('ETH', None),
+    'Somalia': ('SOM', None),
+    'Djibouti': ('DJI', None),
+    'Kenya': ('KEN', None),
+    'Uganda': ('UGA', None),
+    'Tanzania': ('TAN', None),
+    'Rwanda': ('RWA', None),
+    'Burundi': ('BDI', None),
+    'Malawi': ('MAW', None),
+    'Zambia': ('ZAM', None),
+    'Zimbabwe': ('ZIM', None),
+    'Mozambique': ('MOZ', None),
+    'Madagascar': ('MAD', None),
+    'Comoros': ('COM', None),
+    'Seychelles': ('SEY', None),
+    'Mauritius': ('MRI', None),
+    'Swaziland': ('SWZ', None),
+    'Eswatini': ('SWZ', None),
+    'Lesotho': ('LES', None),
+    'Botswana': ('BOT', None),
+    'Namibia': ('NAM', None),
+    'South Africa': ('RSA', None),
+    'Angola': ('ANG', None),
     
     # Common data issues
     'nan': (None, None),
@@ -195,17 +369,44 @@ def process_entities():
 
         # 模糊匹配
         code = fuzzy_match(raw_name, ioc_ref)
-        mapping.append((raw_name, code if code else 'UNK'))
+        if code:
+            mapping.append((raw_name, code))
+            continue
+            
+        # Fallback to manual mapping
+        clean_name = clean_entity_name(raw_name)
+        if clean_name in HISTORICAL_MAPPING:
+            code = HISTORICAL_MAPPING[clean_name][0]
+            mapping.append((raw_name, code))
+            continue
+            
+        # Final fallback to UNK
+        mapping.append((raw_name, 'UNK'))
 
     # 生成映射表
     df = pd.DataFrame(mapping, columns=['RawName', 'IOC_Code'])
+    
+    # 处理剩余的空值
+    df['IOC_Code'] = df['IOC_Code'].replace({
+        None: 'UNK',
+        '': 'UNK',
+        'nan': 'UNK'
+    })
+    
+    # 保存结果
     df.to_csv('country_mapping.csv', index=False)
 
     # 验证模块
     sample = df.sample(50, random_state=42)
     accuracy = sample[sample['IOC_Code'] != 'UNK'].shape[0] / 50
     print(f"Validation Accuracy: {accuracy:.2%}")
-
+    
+    # 输出未匹配的实体
+    unmatched = df[df['IOC_Code'] == 'UNK']
+    if not unmatched.empty:
+        print("\nUnmatched Entities:")
+        print(unmatched['RawName'].unique())
+    
     return df
 
 # 执行处理流程

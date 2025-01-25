@@ -1,9 +1,9 @@
 RawName,IOC_Code
-United States, 
+United States,USA
 Greece,GRE
 Germany,GER
 France,FRA
-Great Britain, 
+Great Britain,GBR
 Hungary,HUN
 Austria,AUT
 Australia,AUS
@@ -24,12 +24,12 @@ Sweden,SWE
 Australasia,ANZ
 Russian Empire,RUS
 Finland,FIN
-South Africa, 
+South Africa,RSA
 Estonia,EST
 Brazil,BRA
 Japan,JPN
 Czechoslovakia,CZE
-New Zealand, 
+New Zealand,NZL
 Yugoslavia,SRB
 Argentina,ARG
 Uruguay,URU
@@ -41,7 +41,7 @@ Egypt,EGY
 Ireland,GBR
 Chile,CHI
 Philippines,PHI
-United States , 
+United States ,USA
 Italy ,ITA
 France ,FRA
 Sweden ,SWE
@@ -49,13 +49,13 @@ Japan ,JPN
 Hungary ,HUN
 Germany ,GER
 Finland ,FIN
-Great Britain , 
+Great Britain ,GBR
 Poland ,POL
 Australia ,AUS
 Argentina ,ARG
 Canada ,CAN
 Netherlands ,NED
-South Africa , 
+South Africa ,RSA
 Ireland ,GBR
 Czechoslovakia ,CZE
 Austria ,AUT
@@ -63,7 +63,7 @@ India ,IND
 Denmark ,DEN
 Mexico ,MEX
 Latvia ,LAT
-New Zealand , 
+New Zealand ,NZL
 Switzerland ,SUI
 Philippines ,PHI
 Belgium ,BEL
@@ -75,11 +75,11 @@ Mexico,MEX
 Jamaica,JAM
 Peru,PER
 Ceylon,ISL
-Trinidad and Tobago, 
+Trinidad and Tobago,TTO
 Panama,PAN
-South Korea, 
+South Korea,KOR
 Iran,IRI
-Puerto Rico, 
+Puerto Rico,PUR
 Soviet Union,RUS
 Lebanon,LBN
 Bulgaria,BUL
@@ -100,7 +100,7 @@ Greece ,GRE
 Norway ,NOR
 Iran ,IRI
 Egypt ,EGY
-Formosa ,USA
+Formosa ,TPE
 Ghana ,GHA
 Morocco ,MAR
 Portugal ,POR
@@ -113,14 +113,14 @@ Ethiopia,ETH
 Tunisia,TUN
 Ghana,GHA
 Kenya,KEN
-Nigeria,NGR
+Nigeria,NIG
 East Germany,GER
 West Germany,GER
 Mongolia,MGL
 Uganda,UGA
 Cameroon,CMR
-Taiwan,THA
-North Korea, 
+Taiwan,TPE
+North Korea,PRK
 Colombia,COL
 Niger,NIG
 Bermuda,BER
@@ -130,20 +130,20 @@ Tanzania,TAN
 Guyana,GUY
 China,CHN
 Morocco,MAR
-Ivory Coast, 
+Ivory Coast,CIV
 Syria,SYR
 Algeria,ALG
-Chinese Taipei, 
-Dominican Republic, 
+Chinese Taipei,TPE
+Dominican Republic,DOM
 Zambia,ZAM
 Suriname,SUR
-Costa Rica, 
+Costa Rica,CRC
 Indonesia,INA
-Netherlands Antilles, 
+Netherlands Antilles,AHO
 Senegal,SEN
-Virgin Islands, 
+Virgin Islands,ISV
 Djibouti,DJI
-Unified Team, 
+Unified Team,EUN
 Lithuania,LTU
 Namibia,NAM
 Croatia,CRO
@@ -154,7 +154,7 @@ Malaysia,MAS
 Qatar,QAT
 Russia,ROC
 Ukraine,UKR
-Czech Republic, 
+Czech Republic,CZE
 Kazakhstan,KAZ
 Belarus,BLR
 FR Yugoslavia,SRB
@@ -162,22 +162,22 @@ Slovakia,SVK
 Armenia,ARM
 Burundi,BDI
 Ecuador,ECU
-Hong Kong, 
+Hong Kong,HKG
 Moldova,MDA
 Uzbekistan,UZB
 Azerbaijan,AZE
 Tonga,TGA
 Georgia,GEO
 Mozambique,MOZ
-Saudi Arabia, 
-Sri Lanka, 
+Saudi Arabia,KSA
+Sri Lanka,LKA
 Vietnam,VIE
 Barbados,BAR
 Kuwait,KUW
 Kyrgyzstan,KGZ
 Macedonia,MKD
-United Arab Emirates, 
-Serbia and Montenegro, 
+United Arab Emirates,UAE
+Serbia and Montenegro,SCG
 Paraguay,PAR
 Eritrea,ERI
 Serbia,SRB
@@ -195,79 +195,79 @@ Cyprus,CYP
 Gabon,GAB
 Guatemala,GUA
 Montenegro,MNE
-Independent Olympic Athletes, 
+Independent Olympic Athletes,IOA
 Fiji,FIJ
 Jordan,JOR
 Kosovo,KOS
 ROC,MAR
-San Marino, 
-North Macedonia, 
+San Marino,SMR
+North Macedonia,MKD
 Turkmenistan,TKM
-Burkina Faso, 
-Saint Lucia, 
+Burkina Faso,BUR
+Saint Lucia,LCA
 Dominica,DMA
 Albania,ALB
-Cabo Verde, 
-Refugee Olympic Team,EOR
-United Kingdom, 
+Cabo Verde,CPV
+Refugee Olympic Team,ROT
+United Kingdom,GBR
 nan,GBR
-Japan (postponed to 2021 due to the coronavirus pandemic), 
+Japan (postponed to 2021 due to the coronavirus pandemic),JPN
 Denmark/Sweden,SWE
 Taifun,URS
 Chad,CHA
 Nicaragua,NCA
 Iraq,IRQ
-United Arab Republic, 
+United Arab Republic,UAR
 Thessalonki,GRE
 Libya,LBA
 Palestine,PLE
 Comoros,COM
 Brunei,BRU
 Maldives,MDV
-North Yemen, 
-Congo (Brazzaville), 
+North Yemen,YEM
+Congo (Brazzaville),CGO
 Monaco,MON
 Fornebo,NOR
 Vesper Boat Club,USA
-Cote d'Ivoire, 
+Cote d'Ivoire,CIV
 Benin,BEN
 Somalia,SOM
 Mali,MLI
 Angola,ANG
 Bangladesh,BAN
-El Salvador, 
+El Salvador,ESA
 Honduras,HON
 Seychelles,SEY
 Mauritania,MTN
-Saint Kitts and Nevis, 
-New York Athletic Club #2, 
-Saint Vincent and the Grenadines, 
+Saint Kitts and Nevis,SKN
+New York Athletic Club #2,USA
+Saint Vincent and the Grenadines,VIN
 Mystery,USA
 Liberia,LBR
 Nepal,NEP
-Clementine V, 
+Clementine V,USA
 Bylina,RUS
 Palau,PLW
-American Samoa, 
+American Samoa,SAM
 Rwanda,RWA
 Stella,NOR
 Malta,MLT
-"Large boat, Central Naval Prep School ""Poros""", 
+"Large boat, Central Naval Prep School ""Poros""",GRE
 Guinea,GUI
 Xolotl,MEX
 Belize,BIZ
-Matrero II, 
-Blue Red, 
-Gteborgs Roddklubb, 
-South Yemen, 
-Lucky Girl, 
+Matrero II,ARG
+Blue Red,USA
+Gteborgs Roddklubb,SWE
+South Yemen,YEM
+Lucky Girl,USA
 Mutafo,GER
-Yeoman VII, 
-Yeoman XII, 
-Union des Socits Franais de Sports Athletiques, 
-Sierra Leone, 
+Yeoman VII,GBR
+Yeoman XII,GBR
+Union des Socits Franais de Sports Athletiques,FRA
+Sierra Leone,SLE
 Bissbi,SWE
-Papua New Guinea, 
+Papua New Guinea,GUI
 Yemen,YEM
 Individual Olympic Athletes,IOA
 Oman,OMA
@@ -276,161 +276,160 @@ Martha,FRA
 Burevestnik,URS
 Druzhba,URS
 Olen,URS
-British Virgin Islands, 
-United States Virgin Islands, 
+British Virgin Islands,ISV
+United States Virgin Islands,USA
 Heatherbell,FIN
-Central African Republic, 
+Central African Republic,CAF
 Madagascar,MAD
 Malaya,MAL
-Socit Nautique de Bayonne, 
-Bosnia and Herzegovina, 
+Socit Nautique de Bayonne,FRA
+Bosnia and Herzegovina,BIH
 Guam,GUM
-Cayman Islands, 
-Cupidon Viking, 
+Cayman Islands,CAY
+Cupidon Viking,FRA
 Damoiselle,FRA
 USFSA,FRA
-The Cloud, 
+The Cloud,USA
 Galerna,ESP
-Heira II, 
-Nykjbings paa Falster, 
-Guinea Bissau, 
-Mohawk Indians, 
+Heira II,GBR
+Nykjbings paa Falster,DEN
+Guinea Bissau,GUI
+Mohawk Indians,USA
 Tornado,URS
 Elsie,SWE
 Roma,ITA
 Tajamar,ESP
-"Lemzos Thorichton ""Spetsai""", 
+"Lemzos Thorichton ""Spetsai""",GRE
 Mound City Rowing Club,USA
-Timor Leste, 
+Timor Leste,TLS
 Amolgavar,ESP
-Congo (Kinshasa), 
-Ali-Baba II, 
-May Be VII, 
-Favorite Hammonia, 
+Congo (Kinshasa),COD
+Ali-Baba II,FRA
+May Be VII,GBR
+Favorite Hammonia,GER
 Laos,LAO
-Refugee Olympic Athletes, 
-Frankfurt Club, 
+Refugee Olympic Athletes,ROA
+Frankfurt Club,GER
 Lett,NOR
 GyoshuII,CAM
-Solomon Islands, 
+Solomon Islands,SOL
 Dolfijn,BEL
-Cape Verde, 
+Cape Verde,CPV
 Tip,DEN
 rn,FIN
 Crete,CRT
 Breslau,AUT
-Club Nautique de Dieppe, 
+Club Nautique de Dieppe,FRA
 Norna,NOR
 Fram,NOR
-Magda IX, 
-Equatorial Guinea, 
+Magda IX,GBR
+Equatorial Guinea,GUI
 Bolivia,BOL
 Saar,SAA
-Antigua and Barbuda, 
-EA II, 
+Antigua and Barbuda,ANT
+EA II,GBR
 Linglom,THA
-Mosk II, 
+Mosk II,RUS
 Andorra,AND
-Elisabeth X, 
-Ludwigshafener Ruderverein, 
-Guyoni,FRA
-"La Salle Turnverein, Chicago", 
+Elisabeth X,GBR
+Ludwigshafener Ruderverein,GER
+"La Salle Turnverein, Chicago",USA
 Gallant,USA
 Hera,GBR
-Swedish Star, 
-Nautikos Omilos, 
+Swedish Star,SWE
+Nautikos Omilos,GRE
 Wolseley-Siddeley,GBR
-Ciocca II, 
+Ciocca II,ITA
 Mirtala,ITA
 Carabinier,FRA
 Pettit-Poucet,FRA
-Federated States of Micronesia, 
+Federated States of Micronesia,FSM
 Myanmar,MYA
 Hirondelle,MON
 Kerstin,SWE
-Evita VI, 
+Evita VI,ARG
 Malawi,MAW
 Bronia,GER
 Bluebottle,GBR
 Rhodesia,RHO
 Snap,DEN
-Sao Tome and Principe, 
-Toronto Argonauts, 
+Sao Tome and Principe,STP
+Toronto Argonauts,CAN
 England,GBR
-Hungaria Evezos Egylet, 
+Hungaria Evezos Egylet,HUN
 Argonaut Rowing Club,CAN
-"Life boat naval ship ""Spetsai""", 
+"Life boat naval ship ""Spetsai""",GRE
 Fortuna,GBR
-Starlight III, 
+Starlight III,GBR
 Liechtenstein,LIE
 Pan,GER
-Leander Club, 
-"Lemzos Thorichton ""Psara""", 
-London City Police, 
+Leander Club,GBR
+"Lemzos Thorichton ""Psara""",GRE
+London City Police,GBR
 Sabre,GBR
-Firebird II, 
-Berliner Ruderverein von 1876, 
-Christian Brothers' College, 
-"Passaic Turnverein, Passaic", 
+Firebird II,USA
+Berliner Ruderverein von 1876,GER
+Christian Brothers' College,AUS
+"Passaic Turnverein, Passaic",USA
 Primorka,YUG
 Gambia,GAM
-Racing Club de France, 
-Grifo III, 
-Grifo IV, 
+Racing Club de France,FRA
+Grifo III,ITA
+Grifo IV,ITA
 Bingo,USA
-Damoiselle IV, 
-Crabe II, 
-Nina Claire, 
+Damoiselle IV,FRA
+Crabe II,FRA
+Nina Claire,USA
 Qu'Importe,FRA
 Konstanz,YUG
 Suzy,BEL
 Mouchette,GBR
-Dansk Idrts Forbund, 
+Dansk Idrts Forbund,DEN
 Marmara,TUR
-Moseley Wanderers, 
-Chicago Athletic Association, 
-Devon and Somerset Wanderers, 
-Mistral Hojris, 
-Cook Islands, 
+Moseley Wanderers,GBR
+Chicago Athletic Association,USA
+Devon and Somerset Wanderers,GBR
+Mistral Hojris,DEN
+Cook Islands,COK
 Pampero,ARG
 Symphony,POR
 Sjhxa,POR
 Faneca,POR
-Ciocca III, 
-"Marinai della nave da guerra ""Varese""", 
+Ciocca III,ITA
+"Marinai della nave da guerra ""Varese""",ITA
 Lalage,BEL
-Gallia II, 
-Dinah V, 
+Gallia II,FRA
+Dinah V,GBR
 Nora,NOR
 Monica,NOR
 Kullan,SWE
 Shoveller,RSA
-Amateur Athletic Association, 
+Amateur Athletic Association,GBR
 Circus,WIF
 Aletta,IRL
 Widgeon,USA
 Inca,BRA
 Relampago,AUS
-Foxhunters Hurlingham, 
+Foxhunters Hurlingham,GBR
 Thames Rowing Club,GBR
-"Davenport Turngemeinde, Davenport", 
-"Norwegier Turnverein, Brooklyn", 
-Erna Signe, 
+"Davenport Turngemeinde, Davenport",USA
+"Norwegier Turnverein, Brooklyn",USA
+Erna Signe,DEN
 Sirene,NOR
 Anitra,DEN
 Snude,DEN
-White Lady, 
-Web II, 
-Web III, 
+White Lady,GBR
+Web II,GBR
+Web III,GBR
 Pistoja/Firenze,ITA
-West Indies Federation, 
-Posillipo III, 
-Tritons Lillois, 
-"Turnverein Vorwrts, Cleveland", 
-Club Nautique de Franais, 
+West Indies Federation,WIF
+Posillipo III,ITA
+Tritons Lillois,FRA
+"Turnverein Vorwrts, Cleveland",USA
+Club Nautique de Franais,FRA
 Boreas,JPN
 Peri,RHO
-"New York Turnverein, New York", 
+"New York Turnverein, New York",USA
 Tichiboo,THA
 Siames-Cat,THA
 Swaziland,SWZ
@@ -438,119 +437,119 @@ Italia,ITA
 Ausonia,ITA
 Angelita,USA
 Nortazo,URU
-Tom Kyle, 
+Tom Kyle,USA
 Tilly,GER
 Esterel,FRA
-North Borneo, 
+North Borneo,MYS
 Wiking,ARG
 Buraddoo,AUS
 Heroine,GBR
 Chok,DEN
 Atlanta,NOR
-Germania II, 
+Germania II,GER
 Wannsee,GER
-Polyteknisk Roklub, 
+Polyteknisk Roklub,DEN
 Aruba,ARU
-Buscape II, 
+Buscape II,BRA
 Nina,FIN
-Kristiania Roklub, 
-Ormsund Roklub, 
+Kristiania Roklub,NOR
+Ormsund Roklub,NOR
 Chuckles,GBR
-Winnipeg Shamrocks, 
+Winnipeg Shamrocks,CAN
 Olle,GBR
 Camelia,POR
 Aschenbrodel,GER
-Whitini Star, 
+Whitini Star,GBR
 Bera,NOR
 Slaghoken,SWE
-Slaghoken II, 
-Great Britain/Germany, 
+Slaghoken II,SWE
+Great Britain/Germany,GBR
 Nikh,GRE
 Swift,GBR
 Andorinha,BRA
-Cupidon III, 
+Cupidon III,FRA
 Athens,GRE
 Marga,SWE
 Serendipity,CAN
-L'Aile VI, 
-Cercle de l'Aviron Roubaix, 
+L'Aile VI,FRA
+Cercle de l'Aviron Roubaix,FRA
 Caprice,CAN
-"New College, Oxford", 
-Compigne Polo Club, 
+"New College, Oxford",GBR
+Compigne Polo Club,FRA
 Vision,GBR
 Cambridge University Boat Club,GBR
-Trickson VI, 
-St. Rose, 
+Trickson VI,GBR
+St. Rose,USA
 Calcinhas,POR
-Gteborgs Roddfrening, 
-Minerva Amsterdam, 
+Gteborgs Roddfrening,SWE
+Minerva Amsterdam,NED
 Chamukina,MEX
-Nausikaa 4, 
+Nausikaa 4,GRC
 New York Athletic Club,USA
 Arcturus,ARG
-St. Louis Southwest Turnverein #1, 
+St. Louis Southwest Turnverein #1,USA
 Nauru,NRU
 Jo,NOR
-Lucky Star, 
+Lucky Star,USA
 Namoussa,FRA
 Briar,SWE
-Panhellenios Gymnastikos Syllogos, 
+Panhellenios Gymnastikos Syllogos,GRE
 Gabbiano,AUS
-Gran Gesto, 
-Ceres II, 
-Covunco III, 
-Chicago Archers, 
-Royal Club Nautique de Gand, 
-Roddklubben af 1912, 
-Bucintoro Venezia, 
-Edelweiss II, 
+Gran Gesto,ITA
+Ceres II,GBR
+Covunco III,ARG
+Chicago Archers,USA
+Royal Club Nautique de Gand,BEL
+Roddklubben af 1912,DEN
+Bucintoro Venezia,ITA
+Edelweiss II,AUT
 Bamba,ITA
-Rush IV, 
-Boston Archers, 
-Ali-Baba IV, 
-Ali-Baba VI, 
-Ali-Baba IX, 
-Upton Park FC, 
-"BLO Polo Club, Rugby", 
+Rush IV,GBR
+Boston Archers,USA
+Ali-Baba IV,FRA
+Ali-Baba VI,FRA
+Ali-Baba IX,FRA
+Upton Park FC,GBR
+"BLO Polo Club, Rugby",GBR
 Hurlingham,GBR
 Western Rowing Club,USA
 Pigoule,FRA
-South Vietnam, 
-Snowten III, 
+South Vietnam,VIE
+Snowten III,GBR
 Hungaria,HUN
-Libellule de Paris, 
+Libellule de Paris,FRA
 Scram,CAN
-Amstel Amsterdam, 
+Amstel Amsterdam,NED
 Scotland,GBR
-Peri II, 
-Liverpool Police Team, 
+Peri II,GBR
+Liverpool Police Team,GBR
 Vinha,FIN
-Fantasio III, 
-Pousse-Moi Pas VII, 
-Norwegian Rowing Association, 
+Fantasio III,FRA
+Pousse-Moi Pas VII,FRA
+Norwegian Rowing Association,NOR
 LaBandera,FRA
-Gilliatt V, 
-United States Golf Association, 
-Trans-Mississippi Golf Association, 
+Gilliatt V,FRA
+United States Golf Association,USA
+Trans-Mississippi Golf Association,USA
 Sarcelle,FRA
 Tango,ARG
 Brynhild,GBR
-Espuma del Mar, 
-Twins II, 
-Pupilles de Neptune de Lille #2, 
+Espuma del Mar,ESP
+Twins II,GBR
+Pupilles de Neptune de Lille #2,FRA
 Beaver,GBR
 Baccara,SUI
 Cobweb,GBR
-Ral-Club Barcelona, 
-Elvis Va, 
+Ral-Club Barcelona,ESP
+Elvis Va,ESP
 Romolo,ITA
-Aldebaran II, 
+Aldebaran II,ITA
 Aldebaran,ITA
 Argus,POR
-Galatea II, 
-Twins VIII, 
-Antwerpia V, 
-Lotta IV, 
+Galatea II,GBR
+Twins VIII,GBR
+Antwerpia V,BEL
+Lotta IV,FIN
 Saga,SWE
 Mari,SWE
 Paula,AUS
@@ -558,74 +557,74 @@ Oranje,NED
 Willem-Six,NED
 DeRuyter,NED
 Acturus,ARG
-Societ Nautique de la Marne, 
+Societ Nautique de la Marne,FRA
 Teresita,FIN
 Barion/Bari,ITA
-Eissero VI, 
-K Division Metropolitan Police Team, 
+Eissero VI,ITA
+K Division Metropolitan Police Team,GBR
 Cambodia,CAM
-Complex II, 
+Complex II,GBR
 Allegro,FRA
-Gam II, 
-Ylliam VIII, 
+Gam II,DEN
+Ylliam VIII,FRA
 Quand-Mme,FRA
-Berliner Ruderclub Sport-Borussia, 
+Berliner Ruderclub Sport-Borussia,GER
 Smyrna,FRA
 Calimucho,FRA
 Bhutan,BHU
 Kingfisher,MYA
 Yangon,MYA
-Gustel V, 
-Sonja II, 
+Gustel V,GER
+Sonja II,DEN
 Jill,DEN
 Kiel,DEN
 KNS,NOR
-Galt Football Club, 
-Tim-Tam III, 
+Galt Football Club,CAN
+Tim-Tam III,AUS
 Uragan,URS
 Kon-Tiki,URS
 Babe,USA
 Antares,ARG
 Venilia,ITA
 Hatuey,CUB
-Cincinnati Archers, 
+Cincinnati Archers,USA
 Morena,DEN
-"Osborne Swimming Club, Manchester", 
-Brussels Swimming and Water Polo Club, 
+"Osborne Swimming Club, Manchester",GBR
+Brussels Swimming and Water Polo Club,BEL
 Ancora,GBR
 Saskia,GBR
 Wales,GBR
 SagaII,CAN
 Gem,BAH
-June Climene, 
+June Climene,USA
 Cambria,AUS
-Oleander XII, 
+Oleander XII,GBR
 Phoenix,HKG
-Ylliam VII, 
-Ballerina IV, 
-Calypse II, 
+Ylliam VII,FRA
+Ballerina IV,GBR
+Calypse II,GBR
 Ciocca,ITA
 Esperia,ITA
 Tournade,FRA
 Tornade,FRA
 Galejan,SWE
-Marshall Islands, 
-Santa Maria, 
+Marshall Islands,MHL
+Santa Maria,ITA
 Dormy,GBR
-Umberta V, 
+Umberta V,ITA
 Rozenn,FRA
 Jest,NZL
 Magdalen College Boat Club,GBR
-Western Golf Association, 
+Western Golf Association,USA
 Scotia,GBR
-Red Dragon, 
-"R.-V. Germania, Leitmeritz", 
+Red Dragon,GBR
+"R.-V. Germania, Leitmeritz",GER
 Akatonbo,IRL
 Terrible,BRA
-Elisabeth V, 
-Studenternes Roklub, 
+Elisabeth V,GBR
+Studenternes Roklub,DEN
 Rififi,FIN
-New York Athletic Club #1, 
+New York Athletic Club #1,USA
 Partenope,INA
 Bermudes,BER
 Cornwall,GBR
@@ -633,151 +632,151 @@ Kiribati,KIR
 Diablo,AUS
 Plume-patte,FRA
 Plume-Patte,FRA
-Pierre et Jean, 
+Pierre et Jean,FRA
 Espadarte,POR
 Fruits,ESP
-Sidi Fekkar, 
+Sidi Fekkar,FRA
 Sidi-Fekkar,FRA
 Souvenance,FRA
 Meteor,BEL
-Kurush IV, 
+Kurush IV,IRI
 Vesania,CUB
-Kurush II, 
+Kurush II,IRI
 Canopus,ESP
-Crabe I, 
+Crabe I,FRA
 Gwendoline,FRA
-United States/France, 
+United States/France,USA
 Vicking,POR
 Daisy,NED
 Virginie,FRA
 Acipactli,MEX
 Pegaso,ITA
-Girl Pat, 
+Girl Pat,GBR
 Fada,FRA
-Bu III, 
+Bu III,FRA
 Lerina,SUI
-"Bagatelle Polo Club, Paris", 
-Bem II, 
-St. Margrite, 
+"Bagatelle Polo Club, Paris",FRA
+Bem II,FRA
+St. Margrite,FRA
 Hollandia,NED
 Aphrodite,USA
 Bonzo,DEN
-Socit Nautique de la Basse Seine, 
-Univ. of Brussels, 
-"Concordia Turnverein, St Louis", 
-Rowing Club Castillon, 
-Frip IV, 
-Mad Dog, 
+Socit Nautique de la Basse Seine,FRA
+Univ. of Brussels,BEL
+"Concordia Turnverein, St Louis",USA
+Rowing Club Castillon,FRA
+Frip IV,FRA
+Mad Dog,USA
 Hb,FRA
-"South St Louis Turnverein, St Louis", 
+"South St Louis Turnverein, St Louis",USA
 Century Boat Club,USA
 Unique,GBR
 Pan-Hellenic Athletic Club,GRE
-"Phalainis ton Thorichtou ""Hydra""", 
+"Phalainis ton Thorichtou ""Hydra""",GRE
 Viking,NOR
 Silja,NOR
 Bermudian,BER
 Dresden,CAN
-United States/Great Britain, 
+United States/Great Britain,USA
 Mignon,FRA
 Favorite,FRA
-St. Louis Amateur Athletic Association, 
+St. Louis Amateur Athletic Association,USA
 Naiad,AUS
 Pakaria,AUS
 Oxalis,POR
 Gitana,FRA
 Joy,GBR
 Thalatta,NED
-Trintel II, 
-"Central Turnverein, Chicago", 
+Trintel II,NOR
+"Central Turnverein, Chicago",USA
 Galopin,FRA
-Berliner Ruderclub, 
+Berliner Ruderclub,GER
 Rhythm,USA
-"Turnverein Vorwrts, Chicago", 
+"Turnverein Vorwrts, Chicago",USA
 Guanahani,BAH
 Unknown,UNK
-Spirit III, 
-Pannonia RC/National RC, 
+Spirit III,GBR
+Pannonia RC/National RC,HUN
 Bella,FIN
-May-Be 1960, 
-May Be, 
-Inga-Lill XXXXIII, 
+May-Be 1960,GBR
+May Be,GBR
+Inga-Lill XXXXIII,SWE
 Nirwana,GER
-Omilos Ereton Peiraios, 
+Omilos Ereton Peiraios,GRE
 Llanoria,USA
-Marmi II, 
+Marmi II,ITA
 Kitty,SWE
-Vaxholm Roddklubb, 
+Vaxholm Roddklubb,SWE
 Tuvalu,TUV
-A North American Team, 
+A North American Team,USA
 Nirefs,GRE
-Proteus II, 
-Finn II, 
+Proteus II,GBR
+Finn II,FIN
 Impala,RSA
 Missouri Athletic Club,USA
 Pam,BER
-Oleander II, 
+Oleander II,GBR
 Apache,NOR
-Roklubb Kbnhavn, 
+Roklubb Kbnhavn,DEN
 Tu-Fri,FIN
-Tutti V, 
-Cha-Cha III, 
+Tutti V,ITA
+Cha-Cha III,ITA
 Augsburg,ITA
-Leander Club #2, 
+Leander Club #2,GBR
 Ariel,CAN
 Encore,NOR
 Feo,GBR
 Seawanhaka Boat Club,USA
-Gem II, 
-Gem III, 
-Gem IV, 
-Gem VII, 
-Pupilles de Neptune de Lille #1, 
-Chaje II, 
-Ludwigshafener Ruder Verein, 
-Leander Club #1, 
+Gem II,GBR
+Gem III,GBR
+Gem IV,GBR
+Gem VII,GBR
+Pupilles de Neptune de Lille #1,FRA
+Chaje II,FRA
+Ludwigshafener Ruder Verein,GER
+Leander Club #1,GBR
 Dylan,GBR
 Moorina,AUS
-30. Februar, 
-Cercle Nautique de Reims, 
+30. Februar,GBR
+Cercle Nautique de Reims,FRA
 Struten,NOR
 Gyrinus,GBR
-Ylliam II, 
-Paka V, 
+Ylliam II,FRA
+Paka V,GBR
 Brigantia,AUT
 Sydney Rowing Club,ANZ
 Espardate,POR
-Australia/Great Britain, 
+Australia/Great Britain,GBR
 Kannibaltje,FRA
 Milwaukee Athletic Club,USA
 Xantippa,FIN
 Skum,DEN
-Miss Denmark 1964, 
+Miss Denmark 1964,DEN
 Kemphaan,NED
-Helsingfors R. K., 
+Helsingfors R. K.,FIN
 Newfoundland,NFL
 Emily,GBR
-Fram III, 
+Fram III,NOR
 Mizar,ARG
 Ubu,BEL
-St. Louis Southwest Turnverein #2, 
-"Socialer Turnverein, Detroit", 
+St. Louis Southwest Turnverein #2,USA
+"Socialer Turnverein, Detroit",USA
 Essen,JPN
-Miss Nippon V, 
+Miss Nippon V,JPN
 Argeste,ITA
 Gullvinge,ARG
 Bajazzo,URU
 Cinara,FRA
 Ilderim,SWE
 Tantalus,GER
-Peiraikos Syndesmos, 
+Peiraikos Syndesmos,GRE
 Baby,FRA
 Femur,FRA
 Colette,FRA
-Germany/United States, 
-"Germania Ruder Club, Hamburg", 
+Germany/United States,USA
+"Germania Ruder Club, Hamburg",GER
 Freddy,BEL
-Rika II, 
+Rika II,FRA
 Korshun,URS
 Patricia,PHI
 Tlaloc,MEX
@@ -785,51 +784,51 @@ Springbok,RSA
 Aretusa,ITA
 Quicksilver,GBR
 Viktoriya,URS
-Omilos Ereton Smyrnis, 
+Omilos Ereton Smyrnis,GRE
 Alcaid,POR
-Alain IV, 
+Alain IV,FRA
 Jupiter,USA
-Three Leaves, 
-"Philadelphia Turngemeinde, Philadelphia", 
-K.S.S.S. 1912, 
+Three Leaves,GBR
+"Philadelphia Turngemeinde, Philadelphia",USA
+K.S.S.S. 1912,SWE
 Paka,GBR
 Sheerio,FIN
-Pan II, 
+Pan II,GBR
 Pasodoble,ESP
 Freja,SWE
 Sass,SWE
 Roy,JPN
-Deutscher Schwimm Verband Berlin, 
+Deutscher Schwimm Verband Berlin,GER
 Jet,CAN
-Shrew II, 
+Shrew II,GBR
 Sylvia,SWE
 Salamander,GBR
 Ingegerd,SWE
 Johan,GBR
 Andromeda,GBR
 Hornet,AUS
-South Sudan, 
+South Sudan,SSD
 Chance,SWE
 Brat,GBR
-Yeoman V, 
+Yeoman V,GBR
 Knigsberg,HUN
-Don Schufro, 
+Don Schufro,SWE
 Vinga,SWE
-Aloha II, 
+Aloha II,USA
 Raili,FIN
 Syndi,CAN
-Vento Sul, 
-Sans Atout, 
-Miss Nippon IV, 
+Vento Sul,BRA
+Sans Atout,FRA
+Miss Nippon IV,JPN
 Tramontane,FRA
 Sandra,FRA
-"Milwaukee Turnverein, Milwaukee", 
-Nurdug II, 
+"Milwaukee Turnverein, Milwaukee",USA
+Nurdug II,GBR
 Eleda,NOR
 Lbeck,BRA
 Yeoman,BAH
-Boer Team, 
-Beatrijs III, 
+Boer Team,RSA
+Beatrijs III,NED
 Lancet,GBR
 Lesotho,LES
 Ravenswood Boat Club,USA
@@ -840,10 +839,10 @@ Kuling,SWE
 Sif,SWE
 Djinn,ARG
 Mascotte,NED
-Bona Fide, 
+Bona Fide,GBR
 Laurea,GBR
 Skidoo,USA
-Tomahawk II, 
+Tomahawk II,GBR
 Whirlaway,CAN
 Sorais,GBR
 Minotaur,USA
@@ -856,71 +855,71 @@ Escapade,BRA
 Ralia,FIN
 Clearwater,DEN
 Angerburg,USA
-Barco Deloro, 
+Barco Deloro,ITA
 Dick,FRA
 Kalayaan,PHI
 Olimpia,HUN
-Macky VI, 
+Macky VI,GBR
 Nrnberg,NED
-Nephos I, 
+Nephos I,GRC
 Tengiri,INA
 Hayama,SWE
-Rush VII, 
-Rush V, 
-Ethnikos Gymnastikos Syllogos, 
-John B, 
+Rush VII,GBR
+Rush V,GBR
+Ethnikos Gymnastikos Syllogos,GRE
+John B,GBR
 Bim,BAH
 Bonaparte,GER
 Mythilus,USA
 Rambo,JPN
 Floresco,SWE
 Lucky,NOR
-Spirit VI, 
-Lully II, 
+Spirit VI,GBR
+Lully II,FRA
 Sildra,NOR
 Noreg,NOR
 Subbnboana,GER
-"Phalainis ton Thorichtou ""Psara""", 
+"Phalainis ton Thorichtou ""Psara""",GRE
 Rostock,GER
 Norman,RUS
 Olympion,GRE
 Sunshine,SWE
 Heidelberg,URU
 Amulet,FRA
-Omas Helliniki P. S., 
+Omas Helliniki P. S.,GRE
 Crocodile,FRA
 Leipzig,FRA
-Red Indian, 
+Red Indian,USA
 Alcyon,FRA
-Suzon IV, 
+Suzon IV,FRA
 Mascaret,FRA
 Sibindi,GBR
-Pupilles de Neptune de Lille, 
+Pupilles de Neptune de Lille,FRA
 Combine,BAH
-Stade Franais AC, 
+Stade Franais AC,FRA
 Kathleen,USA
-Club Nautique de Lyon, 
+Club Nautique de Lyon,FRA
 Holland,NED
 Starita,NED
-Argo II, 
-State VI, 
+Argo II,GBR
+State VI,GBR
 Frimousse,USA
-France/Great Britain, 
+France/Great Britain,GBR
 Gyp,EGY
 Zefyros,GRE
 Pirouette,FRA
 Mebi,ITA
 Riccar,JPN
 Lynn,FIN
-Neptun II, 
-Potomac Archers, 
+Neptun II,GBR
+Potomac Archers,USA
 Brentina,USA
 Nan,GBR
 Hannover,POR
 Scamasaxe,FRA
-Three Star Too, 
-Bellatrix IX, 
-Bellatrix XIII, 
+Three Star Too,GBR
+Bellatrix IX,GBR
+Bellatrix XIII,GBR
 Jeanette,FRA
 Jeannette,FRA
 Turquoise,FRA
@@ -931,9 +930,9 @@ Grifone,ITA
 Twinkle,GBR
 Myojo,JPN
 Ducky,FRA
-Rose Pompon, 
+Rose Pompon,FRA
 Souriceau,FRA
-Lady C, 
+Lady C,GBR
 Frieda,USA
 Marsouin,FRA
 Persey,URS
@@ -942,33 +941,33 @@ Atalanta Boat Club,USA
 Wendehals,GER
 Titia,GBR
 Pimm,BRA
-Gustel X, 
-Gustl XI, 
-Pop Art, 
+Gustel X,GER
+Gustl XI,GER
+Pop Art,GBR
 Barrenjoey,AUS
-Voloira II, 
+Voloira II,FRA
 Bremen,FIN
-Quando Quando, 
-Donar III, 
+Quando Quando,ITA
+Donar III,GER
 Hojwa,SWE
 Tineke,USA
 Danuta,POL
 Maryke,AUS
-Falcon VI, 
+Falcon VI,GBR
 Manana,CAN
 Pandora,NZL
 Rampage,ARG
-Diabolo St Maurice, 
+Diabolo St Maurice,FRA
 Ravel,USA
-Humbug V, 
-Astrid III, 
+Humbug V,GBR
+Astrid III,GBR
 Kln,SUI
 Demi-Mondaine,FRA
-Nokaut II, 
+Nokaut II,GBR
 Almaz,URS
 Tulilind,URS
 Notavel,POR
-Galopin De La Font, 
+Galopin De La Font,FRA
 Margaret,USA
 Comanche,USA
 Cicely,GBR
@@ -980,75 +979,75 @@ Orion,CAN
 Merope,ITA
 Scaup,CAN
 Legionario,ITA
-Merope III, 
+Merope III,ITA
 Enotria,ITA
 Verveine,FRA
-Bohemia/Great Britain,CZE
+Bohemia/Great Britain,GBR
 Ariette,FRA
-Greenoaks Dundee, 
+Greenoaks Dundee,GBR
 Fantlet,FRA
-Maid of Lebanon, 
+Maid of Lebanon,LBN
 Danaldo,JPN
 Lyn,FIN
 Sunrise,NED
-Falcon IV, 
+Falcon IV,GBR
 Potsdam,GBR
 Giselle,FRA
 Ardilla,ARG
 Windor,CAN
-Vim III, 
+Vim III,GBR
 Lasha,SWE
 Hilarius,USA
 Hakahana,RSA
 Glider,USA
-Squid III, 
+Squid III,GBR
 Mamie,FRA
 C.V.A.,FRA
 Singy,FRA
 Hamburg,NOR
-Mac Miche, 
+Mac Miche,FRA
 Camille,FRA
 Cuxhaven,TUR
-Formosa,USA
+Formosa,TPE
 Danzig,BEL
 Salinero,NED
 Sjovinge,SWE
 Brandenburg,EST
 Freia,FRA
 Satchmo,GER
-Sea Dog, 
+Sea Dog,GBR
 Mainz,CHI
-Solos Carex, 
-Dow Jones, 
+Solos Carex,FRA
+Dow Jones,GBR
 Digby,DEN
-Republic of the Congo, 
-"Hong Kong, China", 
-The Gambia, 
-Democratic Republic of the Congo, 
-Guinea-Bissau,GBS
-São Tomé and Príncipe, 
-East Timor, 
+Republic of the Congo,CGO
+"Hong Kong, China",HKG
+The Gambia,GAM
+Democratic Republic of the Congo,CGO
+Guinea-Bissau,GUI
+São Tomé and Príncipe,STP
+East Timor,TLS
 Eswatini,SWZ
-UA Emirates, 
-IR Iran, 
-St Kitts and Nevis, 
+UA Emirates,UAE
+IR Iran,IRI
+St Kitts and Nevis,SKN
 Congo,CGO
-"Virgin Islands, US", 
+"Virgin Islands, US",ISV
 AIN,AIN
 StVincent&Grenadines,VIN
-Côte d'Ivoire, 
-Sao Tome & Principe, 
+Côte d'Ivoire,CIV
+Sao Tome & Principe,STP
 Timor-Leste,TLS
 Micronesia,FSM
-Republic of Moldova, 
+Republic of Moldova,MDA
 Türkiye,TUR
 Czechia,CZE
-"Virgin Islands, B", 
+"Virgin Islands, B",ISV
 Korea,KOR
 EOR,EOR
-Brunei Darussalam, 
-Centr Afric Re, 
-Bosnia & Herzegovina, 
-Lao PDR, 
-DR Congo, 
-DPR Korea, 
+Brunei Darussalam,BRN
+Centr Afric Re,CAF
+Bosnia & Herzegovina,BIH
+Lao PDR,LAO
+DR Congo,COD
+DPR Korea,PRK
