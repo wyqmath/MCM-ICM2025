@@ -221,13 +221,6 @@ SPECIAL_TEAM_MAPPING = {
     r'\u00A0': ' '  # Replace non-breaking spaces
 }
 
-def build_ioc_reference():
-    """构建IOC标准编码库"""
-    # 从各数据集中提取标准NOC编码
-    athletes = pd.read_csv('summerOly_athletes.csv')
-    noc_ref = athletes[['Team', 'NOC']].drop_duplicates()
-    return noc_ref.set_index('Team')['NOC'].to_dict()
-
 def clean_entity_name(name):
     """Clean and normalize entity names"""
     if pd.isna(name):
@@ -324,8 +317,8 @@ def calculate_metrics(df):
     accuracy = matched / total
     
     # Calculate error types
-    historical_errors = df[df['RawName'].isin(HISTORICAL_MAPPING.keys()) & (df['IOC_Code'] == 'UNK')]
-    team_errors = df[df['RawName'].str.contains('|'.join(SPECIAL_TEAM_MAPPING.keys())) & (df['IOC_Code'] == 'UNK')]
+    historical_errors = df[df['Country'].isin(HISTORICAL_MAPPING.keys()) & (df['IOC_Code'] == 'UNK')]
+    team_errors = df[df['Country'].str.contains('|'.join(SPECIAL_TEAM_MAPPING.keys())) & (df['IOC_Code'] == 'UNK')]
     
     print(f"\nValidation Metrics:")
     print(f"- Total Entities: {total}")
@@ -343,8 +336,11 @@ def calculate_metrics(df):
 
 def process_entities():
     """主处理流程"""
-    # 初始化参考库
-    ioc_ref = build_ioc_reference()
+    # 加载GDP数据获取IOC代码
+    gdp_data = pd.read_csv('world-gdp-data-with-ioc.csv')
+    ioc_mapping = gdp_data[['country', 'IOC_Code']].drop_duplicates()
+    ioc_mapping = ioc_mapping.dropna(subset=['IOC_Code'])
+    ioc_ref = ioc_mapping.set_index('country')['IOC_Code'].to_dict()
 
     # 加载多源数据
     medal_counts = pd.read_csv('summerOly_medal_counts.csv')
@@ -367,10 +363,9 @@ def process_entities():
             mapping.append((raw_name, historical_code))
             continue
 
-        # 模糊匹配
-        code = fuzzy_match(raw_name, ioc_ref)
-        if code:
-            mapping.append((raw_name, code))
+        # 直接匹配IOC代码
+        if raw_name in ioc_ref:
+            mapping.append((raw_name, ioc_ref[raw_name]))
             continue
             
         # Fallback to manual mapping
@@ -383,8 +378,8 @@ def process_entities():
         # Final fallback to UNK
         mapping.append((raw_name, 'UNK'))
 
-    # 生成映射表
-    df = pd.DataFrame(mapping, columns=['RawName', 'IOC_Code'])
+    # 生成结果
+    df = pd.DataFrame(mapping, columns=['Country', 'IOC_Code'])
     
     # 处理剩余的空值
     df['IOC_Code'] = df['IOC_Code'].replace({
@@ -392,15 +387,6 @@ def process_entities():
         '': 'UNK',
         'nan': 'UNK'
     })
-    
-    # 保存结果
-    df.to_csv('country_mapping.csv', index=False)
-
-    # 检查生成的文件中是否有NaN值
-    if df.isnull().values.any():
-        print("生成的文件中包含NaN值。")
-    else:
-        print("生成的文件中不包含NaN值。")
 
     # 验证模块
     sample = df.sample(50, random_state=42)
@@ -411,13 +397,10 @@ def process_entities():
     unmatched = df[df['IOC_Code'] == 'UNK']
     if not unmatched.empty:
         print("\nUnmatched Entities:")
-        print(unmatched['RawName'].unique())
+        print(unmatched['Country'].unique())
     
     return df
 
 # 执行处理流程
 if __name__ == "__main__":
     process_entities()
-
-# Created/Modified files during execution:
-print("country_mapping.csv")

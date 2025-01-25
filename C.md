@@ -42,9 +42,8 @@
      2. Bayesian Structural Time Series
      3. XGBoost with SHAP regularization
      4. Transformer with Temporal Encoding
-     5. Hybrid ARIMA-GARCH
-
-   - **置信区间计算**：基于分位数回归集成结果，构建非对称预测区间
+     
+- **置信区间计算**：基于分位数回归集成结果，构建非对称预测区间
 
 ------
 
