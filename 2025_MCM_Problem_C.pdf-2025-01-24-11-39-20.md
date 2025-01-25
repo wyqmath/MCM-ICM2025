@@ -56,7 +56,7 @@ https://forms.comap.org/241335097294056.You will need your team's control number
 
 - summerOly_hosts.csv - list of host country for all summer Olympics from 1896 to 2032
 
-- summerOly programs.csv - counts of number of events by sport/discipline and total for all summer Olympics from 1896 to 2032
+- summerOly programs.csv - counts of number of events by sport/discipline and total for all summer Olympics from 1896 to 2024
 
 Data, such as country designations, are recorded by the International Olympic Committee (IOC) (on their Olympics.com website) at the time of a given Olympics. Thus, designations may change in the data set. As with all data, there may be recording anomalies. Note, for example, in the athlete's data set in some cases for sports like tennis, table tennis, beach volleyball, the "Team" includes more detail than just the country. For example, Germany-1 would be the first of two beach volleyball teams from Germany in the 2000 Olympics. Decisions and assumptions about how to handle the data are an important part of the modeling process.
 

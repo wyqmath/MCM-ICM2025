@@ -166,10 +166,19 @@ class STGCN_LSTM(nn.Module):
             if 'weight' in name:
                 if len(param.shape) >= 2:
                     nn.init.kaiming_normal_(param, nonlinearity='relu')
+                    # 检查初始化值
+                    mean = param.data.mean().item()
+                    std = param.data.std().item()
+                    if abs(mean) > 0.1 or std > 1.0:
+                        nn.init.xavier_uniform_(param)
                 else:
                     nn.init.normal_(param, mean=0.0, std=0.02)
             elif 'bias' in name:
                 nn.init.zeros_(param)
+                
+        # 学习率预热
+        self.warmup_steps = 100
+        self.current_step = 0
     
     def forward(self, x, edge_index, edge_attr, seq_length):
         # 确保输入维度正确
@@ -328,7 +337,7 @@ class DeepEnsemble:
         
         return data
 
-    def train(self, data, epochs=100, lr=0.001, batch_size=32, l1_lambda=1e-5, l2_lambda=1e-4):
+    def train(self, data, epochs=1000, lr=0.001, batch_size=32, l1_lambda=1e-5, l2_lambda=1e-4):
         # 预处理：确保所有数据都没有NaN值
         print("开始数据预处理...")
         
@@ -367,14 +376,13 @@ class DeepEnsemble:
         from torch_geometric.loader import DataLoader as GeometricDataLoader
         train_loader = GeometricDataLoader([data], batch_size=1, shuffle=True)
         
-        # 使用 OneCycleLR 调度器
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        # 使用 CosineAnnealingWarmRestarts 调度器
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer,
-            max_lr=lr,
-            epochs=epochs,
-            steps_per_epoch=len(train_loader),
-            pct_start=0.3,
-            anneal_strategy='cos'
+            T_0=100,  # 100 epochs per cycle
+            T_mult=1,
+            eta_min=1e-6,  # Minimum learning rate
+            last_epoch=-1
         )
         
         # 训练 STGCN-LSTM
@@ -385,7 +393,7 @@ class DeepEnsemble:
             epoch_loss = 0.0
             valid_batches = 0
             
-            for batch in train_loader:
+            for i, batch in enumerate(train_loader):
                 try:
                     optimizer.zero_grad()
                     
@@ -418,11 +426,25 @@ class DeepEnsemble:
                         total_norm = total_norm ** 0.5
                         grad_norms.append(total_norm)
                         
-                        # 梯度裁剪
+                        # 梯度裁剪和监控
                         torch.nn.utils.clip_grad_norm_(
                             self.models[0].parameters(),
-                            max_norm=1.0
+                            max_norm=1.0,
+                            norm_type=2
                         )
+                        
+                        # 梯度累积
+                        if (i + 1) % 4 == 0:  # 每4个batch更新一次
+                            # 学习率预热
+                            if self.current_step < self.warmup_steps:
+                                lr_scale = min(1.0, float(self.current_step + 1) / self.warmup_steps)
+                                for param_group in optimizer.param_groups:
+                                    param_group['lr'] = lr_scale * param_group['lr']
+                                    
+                            optimizer.step()
+                            optimizer.zero_grad()
+                            scheduler.step()
+                            self.current_step += 1
                         
                         optimizer.step()
                         scheduler.step()
@@ -438,9 +460,22 @@ class DeepEnsemble:
             if valid_batches > 0:
                 avg_loss = epoch_loss / valid_batches
                 if (epoch+1) % 10 == 0:
+                    # 计算参数统计
+                    param_norms = [p.norm().item() for p in self.models[0].parameters() if p.requires_grad]
+                    grad_norms = [p.grad.norm().item() for p in self.models[0].parameters() if p.grad is not None]
+                    
                     print(f'Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}, '
                           f'Grad Norm: {total_norm:.4f}, '
-                          f'LR: {scheduler.get_last_lr()[0]:.6f}')
+                          f'LR: {scheduler.get_last_lr()[0]:.6f}, '
+                          f'Param Norm: {np.mean(param_norms):.4f} ± {np.std(param_norms):.4f}, '
+                          f'Grad Norms: {np.mean(grad_norms):.4f} ± {np.std(grad_norms):.4f}')
+                    
+                    # 记录激活统计
+                    activations = []
+                    for name, module in self.models[0].named_modules():
+                        if isinstance(module, nn.Linear):
+                            activations.append(module.weight.data.abs().mean().item())
+                    print(f'Activation Mean: {np.mean(activations):.4f} ± {np.std(activations):.4f}')
                     
                     # 打印部分预测和目标值，使用detach()
                     #print("Sample predictions:", outputs[0][:5].cpu().detach().numpy().flatten())
@@ -739,26 +774,21 @@ class OlympicDataLoader:
     
     def load_weight_matrix(self):
         df = pd.read_csv(f'{self.data_dir}/dynamic_weight_matrix_2028proj.csv')
+        print("权重矩阵数据：")
+        print(df.head())  # 输出前几行数据
         
-        # 获取数值列和国家名称
-        numeric_data = df.iloc[:, 1:3].apply(pd.to_numeric, errors='coerce')
-        countries = df.iloc[:, 0]
+        # 将数据转换为数值类型，强制转换错误为NaN
+        numeric_data = pd.to_numeric(df.values.flatten(), errors='coerce').reshape(df.shape)
         
-        # 数据验证和处理
-        if numeric_data.isnull().values.any():
-            print(f"发现{numeric_data.isnull().sum().sum()}个NaN值")
-            # 使用列平均值填充NaN
-            numeric_data = numeric_data.fillna(numeric_data.mean())
+        # 检查是否有NaN值
+        if np.isnan(numeric_data).any():
+            print("警告：权重矩阵中存在NaN值，将被替换为0。")
+            numeric_data = np.nan_to_num(numeric_data)  # 将NaN替换为0
         
-        # 额外验证
-        if (numeric_data < 0).values.any():
-            print("发现负值")
-            numeric_data = numeric_data.clip(lower=0)
-        
-        return torch.tensor(numeric_data.values, dtype=torch.float32), countries
+        countries = df.columns.tolist()  # 假设国家名称在列名中
+        return torch.tensor(numeric_data, dtype=torch.float32), countries
     
     def load_coach_scores(self):
-        # Load data with country names
         data = np.genfromtxt(
             f'{self.data_dir}/sport_pagerank_scores.csv',
             delimiter=',',
@@ -766,11 +796,14 @@ class OlympicDataLoader:
             dtype=str,
             filling_values=''
         )
-        # Extract countries and scores
-        countries = data[:, 0]
-        scores = np.array(data[:, 1], dtype=float)
-        # Remove any rows with NaN values
-        valid_mask = ~np.isnan(scores)
+        print("教练评分数据：")
+        print(data[:5])  # 输出前5行数据
+        
+        # 提取有效的分数和国家
+        scores = data[:, 1].astype(float)  # 假设分数在第二列
+        countries = data[:, 0]  # 假设国家在第一列
+        valid_mask = ~np.isnan(scores)  # 创建有效掩码以过滤NaN值
+        
         return torch.tensor(scores[valid_mask]), countries[valid_mask]
     
     def load_event_specialization(self):
@@ -798,6 +831,8 @@ class OlympicDataLoader:
             
         numeric_data = numeric_data.map(clean_value)
         
+        print("事件专业化数据：")
+        print(numeric_data.head())  # 输出前几行数据
         return torch.tensor(numeric_data.values, dtype=torch.float32)
     
     def load_medal_correlation(self):
@@ -819,6 +854,8 @@ class OlympicDataLoader:
                                  columns=numeric_data.columns)
             numeric_data = pd.concat([numeric_data, padding])
             
+        print("奖牌相关性数据：")
+        print(df.head())  # 输出前几行数据
         return torch.tensor(numeric_data.values, dtype=torch.float32)
     
     def load_trade_flow(self):
@@ -830,6 +867,8 @@ class OlympicDataLoader:
         numeric_data = df.apply(pd.to_numeric, errors='coerce')
         
         # Fill NaN values with 0 and convert to tensor
+        print("贸易流数据：")
+        print(df.head())  # 输出前几行数据
         return torch.tensor(numeric_data.fillna(0).values, dtype=torch.float32)
     
     def load_gdp(self):
@@ -841,6 +880,8 @@ class OlympicDataLoader:
         gdp_values = pd.to_numeric(df.iloc[:, 1], errors='coerce')
         
         # Fill NaN values with 0 and convert to tensor
+        print("GDP数据：")
+        print(df.head())  # 输出前几行数据
         return torch.tensor(gdp_values.fillna(0).values, dtype=torch.float32)
         
     def get_graph_data(self):
