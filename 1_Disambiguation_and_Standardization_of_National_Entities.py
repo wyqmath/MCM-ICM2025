@@ -396,6 +396,12 @@ def process_entities():
     # 保存结果
     df.to_csv('country_mapping.csv', index=False)
 
+    # 检查生成的文件中是否有NaN值
+    if df.isnull().values.any():
+        print("生成的文件中包含NaN值。")
+    else:
+        print("生成的文件中不包含NaN值。")
+
     # 验证模块
     sample = df.sample(50, random_state=42)
     accuracy = sample[sample['IOC_Code'] != 'UNK'].shape[0] / 50

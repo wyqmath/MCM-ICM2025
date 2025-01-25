@@ -102,6 +102,15 @@ def main():
     result['Weight'] = weights
     result.to_csv('dynamic_weight_matrix_2028proj.csv', index=False)
 
+# 检查生成的文件中是否有NaN值
+def check_nan_in_file(file_path):
+    df = pd.read_csv(file_path)
+    if df.isnull().values.any():
+        print(f"警告：文件 {file_path} 中包含NaN值。")
+    else:
+        print(f"文件 {file_path} 中不包含NaN值。")
+
 if __name__ == '__main__':
     main()
+    check_nan_in_file('dynamic_weight_matrix_2028proj.csv')
     print("输出完毕！")
