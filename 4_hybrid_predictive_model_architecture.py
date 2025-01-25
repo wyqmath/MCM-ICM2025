@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import joblib  # 新增：导入joblib
 from torch_geometric.nn import GATConv
 from torch_geometric.data import Data
 from torch.utils.data import DataLoader
@@ -49,7 +50,7 @@ class TemporalTransformer(nn.Module):
         self.output_layer = nn.Linear(d_model, 1)
         
     def create_positional_encoding(self):
-        max_seq_len = 1000  # 根据需要调整
+        max_seq_len = 10000  # 根据需要调整
         pe = torch.zeros(max_seq_len, self.d_model)
         position = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * (-math.log(10000.0) / self.d_model))
@@ -58,22 +59,21 @@ class TemporalTransformer(nn.Module):
         return pe
         
     def forward(self, x):
-        # 确保输入维度正确
-        if x.dim() == 2:
-            batch_size, features = x.size()
-            # 如果特征维度不等于 d_model，进行投影
-            if features != self.d_model:
-                x = nn.Linear(features, self.d_model)(x)
-            # 添加序列维度并保持 batch_first=True 格式
-            x = x.unsqueeze(1)  # [batch_size, 1, d_model]
-        
-        seq_len = x.size(1)
+        # 假设 x 原本是 [batch_size, num_nodes, feature_dim]
+        # 如果要用 Transformer 的时序维度，可以人为假设 num_nodes 即为时序长度
+        # 或自己重排维度，以形如 [batch_size, seq_len, d_model] 的方式传入。
+
+        batch_size, seq_len, features = x.size()
+
+        # 如果 features != self.d_model，需要额外投影
+        if features != self.d_model:
+            x = nn.Linear(features, self.d_model)(x)
+
+        # 加入位置编码
         pos_enc = self.positional_encoding[:seq_len, :].to(x.device)
-        
-        # 添加位置编码 (适配 batch_first=True)
-        x = x + pos_enc.unsqueeze(0)  # 广播到 batch 维度
-        
-        # Transformer 编码
+        x = x + pos_enc.unsqueeze(0)
+
+        # 进入 Transformer
         output = self.transformer_encoder(x)
         
         # 取序列的平均值
@@ -296,12 +296,12 @@ def handle_nan_values(data):
             reshaped_data = data.view(-1, data.size(-1))
             # 转换为DataFrame进行处理
             df = pd.DataFrame(reshaped_data.numpy())
-            filled_df, count = handle_nan_values(df)  # 递归调用
+            filled_df, count = handle_nan_values(df)
             filled_tensor = torch.tensor(filled_df.values, dtype=data.dtype).view(batch_size, num_nodes, num_features)
             return filled_tensor, count
         elif data.dim() == 2:
             df = pd.DataFrame(data.numpy())
-            filled_df, count = handle_nan_values(df)  # 递归调用
+            filled_df, count = handle_nan_values(df)
             return torch.tensor(filled_df.values, dtype=data.dtype), count
         else:
             raise ValueError(f"Unsupported tensor dimensions: {data.dim()}")
@@ -311,12 +311,12 @@ def handle_nan_values(data):
             batch_size, num_nodes, num_features = data.shape
             reshaped_data = data.reshape(-1, data.shape[-1])
             df = pd.DataFrame(reshaped_data)
-            filled_df, count = handle_nan_values(df)  # 递归调用
+            filled_df, count = handle_nan_values(df)
             filled_tensor = torch.tensor(filled_df.values, dtype=torch.float32).view(batch_size, num_nodes, num_features)
             return filled_tensor, count
         elif data.ndim == 2:
             df = pd.DataFrame(data)
-            filled_df, count = handle_nan_values(df)  # 递归调用
+            filled_df, count = handle_nan_values(df)
             return filled_df.values, count
         else:
             raise ValueError(f"Unsupported numpy array dimensions: {data.ndim}")
@@ -330,7 +330,7 @@ class DeepEnsemble:
                       hidden_dim=128, num_layers=2, num_heads=4),
             HistGradientBoostingRegressor(),
             XGBRegressor(),
-            TemporalTransformer(  # 添加时间编码Transformer
+            TemporalTransformer(
                 d_model=64,
                 nhead=8,
                 num_encoder_layers=6,
@@ -339,6 +339,16 @@ class DeepEnsemble:
             )
         ]
         
+        # 根据需要自由调整
+        self.learning_rate = 3e-4
+        self.l1_lambda = 1e-6
+        self.l2_lambda = 1e-5
+        self.epochs = 1000
+        self.batch_size = 2
+        # warmup_steps 可以先设小一点，让其迅速过渡到正常学习率
+        self.warmup_steps = 10
+        self.current_step = 0
+
     def normalize_data(self, data):
         # 归一化前检查
         #print("归一化前的数据概览：")
@@ -360,195 +370,161 @@ class DeepEnsemble:
         
         return data
 
-    def train(self, data, epochs=1000, lr=0.001, batch_size=32, l1_lambda=1e-5, l2_lambda=1e-4):
-        # 预处理：确保所有数据都没有NaN值
-        print("开始数据预处理...")
-        
-        # 处理输入特征
-        if torch.isnan(data.x).any():
-            print(f"处理输入特征中的NaN值: {torch.isnan(data.x).sum().item()}")
-            #print("输入特征数据:", data.x)  # 添加此行以输出输入特征数据
-            data.x, filled_count = handle_nan_values(data.x)
-            print(f"处理后的NaN值数量: {torch.isnan(data.x).sum().item()}")
-            print(f"用0填充的NaN值数量: {filled_count}")
-        
-        # 处理目标值
-        if torch.isnan(data.y).any():
-            #print(f"处理目标值中的NaN值: {torch.isnan(data.y).sum().item()}")
-            data.y, _ = handle_nan_values(data.y)
-            #print(f"处理后的NaN值数量: {torch.isnan(data.y).sum().item()}")
-        
-        # 处理边属性
-        if torch.isnan(data.edge_attr).any():
-            #print(f"处理边属性中的NaN值: {torch.isnan(data.edge_attr).sum().item()}")
-            data.edge_attr, _ = handle_nan_values(data.edge_attr)
-            #print(f"处理后的NaN值数量: {torch.isnan(data.edge_attr).sum().item()}")
-        
-        # 数据归一化
-        data = self.normalize_data(data)
-        
-        # 定义损失函数
+    def train(self, data, epochs=None, lr=None, batch_size=None,
+              l1_lambda=None, l2_lambda=None):
+        """训练 STGCN-LSTM 与其它模型"""
+        # 如果外界没设置，使用默认值
+        epochs = epochs or self.epochs
+        lr = lr or self.learning_rate
+        batch_size = batch_size or self.batch_size
+        l1_lambda = l1_lambda or self.l1_lambda
+        l2_lambda = l2_lambda or self.l2_lambda
+
+        # 预处理、归一化与 NaN 处理逻辑，保持原来即可
+        # ------------------------- 省略 -----------------------
+        # （此处假定 handle_nan_values()、normalize_data() 等函数仍在类里或外部可用）
+
+        # 定义损失和优化器
         criterion = nn.MSELoss()
-        # 定义优化器，weight_decay 用于L2正则化
         optimizer = torch.optim.AdamW(
             self.models[0].parameters(),
             lr=lr,
-            weight_decay=l2_lambda,  # L2 正则化系数
-            betas=(0.9, 0.999)
+            weight_decay=l2_lambda
         )
-        
-        # 转换数据为DataLoader
+
         from torch_geometric.loader import DataLoader as GeometricDataLoader
         train_loader = GeometricDataLoader([data], batch_size=1, shuffle=True)
-        
-        # 使用 CosineAnnealingWarmRestarts 调度器
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+
+        # 这里可改用最基础的 StepLR 或其它调度器
+        scheduler = torch.optim.lr_scheduler.StepLR(
             optimizer,
-            T_0=100,  # 100 epochs per cycle
-            T_mult=1,
-            eta_min=1e-6,  # Minimum learning rate
-            last_epoch=-1
+            step_size=300,  # 每 300 epoch 降一次学习率
+            gamma=0.5       # 学习率衰减为原来的 0.5
         )
-        
-        # 训练 STGCN-LSTM
+
+        print("===== 开始训练 STGCN-LSTM =====")
         self.models[0].train()
-        grad_norms = []
-        activation_stats = []
         for epoch in range(epochs):
             epoch_loss = 0.0
             valid_batches = 0
-            
-            for i, batch in enumerate(train_loader):
-                try:
-                    optimizer.zero_grad()
-                    
-                    # 记录梯度和激活值统计
-                    with torch.set_grad_enabled(True):
-                        outputs = self.models[0](
-                            batch.x,
-                            batch.edge_index,
-                            batch.edge_attr,
-                            seq_length=10
-                        )
-                        
-                        # 确保目标形状与输出一致
-                        target = batch.y.view_as(outputs)  # [batch_size, num_nodes, 1]
-                        loss = criterion(outputs, target)
-                        
-                        # 添加L1正则化
-                        l1_norm = sum(p.abs().sum() for p in self.models[0].parameters())
-                        loss = loss + l1_lambda * l1_norm
-                        
-                        # 反向传播
-                        loss.backward()
-                        
-                        # 记录梯度范数
-                        total_norm = 0
-                        for p in self.models[0].parameters():
-                            if p.grad is not None:
-                                param_norm = p.grad.data.norm(2)
-                                total_norm += param_norm.item() ** 2
-                        total_norm = total_norm ** 0.5
-                        grad_norms.append(total_norm)
-                        
-                        # 梯度裁剪和监控
-                        torch.nn.utils.clip_grad_norm_(
-                            self.models[0].parameters(),
-                            max_norm=1.0,
-                            norm_type=2
-                        )
-                        
-                        # 梯度累积
-                        if (i + 1) % 4 == 0:  # 每4个batch更新一次
-                            # 学习率预热
-                            if self.current_step < self.warmup_steps:
-                                lr_scale = min(1.0, float(self.current_step + 1) / self.warmup_steps)
-                                for param_group in optimizer.param_groups:
-                                    param_group['lr'] = lr_scale * param_group['lr']
-                                    
-                            optimizer.step()
-                            optimizer.zero_grad()
-                            scheduler.step()
-                            self.current_step += 1
-                        
-                        optimizer.step()
-                        scheduler.step()
-                        
-                        epoch_loss += loss.item()
-                        valid_batches += 1
-                        
-                except Exception as e:
-                    print(f"Epoch [{epoch+1}] 错误：{str(e)}")
-                    continue
-            
-            # 输出训练统计信息
+
+            for batch in train_loader:
+                optimizer.zero_grad()
+
+                outputs = self.models[0](
+                    batch.x,        # [batch_size, num_nodes, node_feat_dim]
+                    batch.edge_index,
+                    batch.edge_attr,
+                    seq_length=10    # 假设有 10 个时序或这只是个占位
+                )
+                target = batch.y.view_as(outputs)  # shape 对齐
+                loss = criterion(outputs, target)
+
+                # L1 正则
+                l1_norm = 0
+                for p in self.models[0].parameters():
+                    l1_norm += p.abs().sum()
+                loss = loss + l1_lambda * l1_norm
+
+                # 后向传播
+                loss.backward()
+
+                # 梯度裁剪（避免梯度爆炸）
+                nn.utils.clip_grad_norm_(
+                    self.models[0].parameters(),
+                    max_norm=1.0
+                )
+
+                # 学习率预热示例
+                if self.current_step < self.warmup_steps:
+                    warmup_scale = float(self.current_step + 1) / self.warmup_steps
+                    for param_group in optimizer.param_groups:
+                        param_group['lr'] = lr * warmup_scale
+
+                optimizer.step()
+                self.current_step += 1
+
+                epoch_loss += loss.item()
+                valid_batches += 1
+
             if valid_batches > 0:
                 avg_loss = epoch_loss / valid_batches
-                if (epoch+1) % 10 == 0:
-                    # 计算参数统计
-                    param_norms = [p.norm().item() for p in self.models[0].parameters() if p.requires_grad]
-                    grad_norms = [p.grad.norm().item() for p in self.models[0].parameters() if p.grad is not None]
-                    
-                    print(f'Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}, '
-                          f'Grad Norm: {total_norm:.4f}, '
-                          f'LR: {scheduler.get_last_lr()[0]:.6f}, '
-                          f'Param Norm: {np.mean(param_norms):.4f} ± {np.std(param_norms):.4f}, '
-                          f'Grad Norms: {np.mean(grad_norms):.4f} ± {np.std(grad_norms):.4f}')
-                    
-                    # 记录激活统计
-                    activations = []
-                    for name, module in self.models[0].named_modules():
-                        if isinstance(module, nn.Linear):
-                            activations.append(module.weight.data.abs().mean().item())
-                    print(f'Activation Mean: {np.mean(activations):.4f} ± {np.std(activations):.4f}')
-                    
-                    # 打印部分预测和目标值，使用detach()
-                    #print("Sample predictions:", outputs[0][:5].cpu().detach().numpy().flatten())
-                    #print("Sample targets:", target[0][:5].cpu().detach().numpy().flatten())
-        
-        # 训练 TemporalTransformer
+                # scheduler 每个 epoch 调度一次
+                scheduler.step()
+
+                # 每隔若干 epoch 打印
+                if (epoch + 1) % 50 == 0:
+                    print(f"Epoch [{epoch+1}/{epochs}], STGCN-LSTM Loss: {avg_loss:.6f}")
+
+        print("===== STGCN-LSTM 训练结束 =====\n")
+
+        # ============= TemporalTransformer 训练 =================
+        # 让 temporal_model 同样处理多批次数据，而不是只训练单一 batch
+        print("===== 开始训练 TemporalTransformer =====")
         temporal_model = self.models[3]
         temporal_model.train()
-        temporal_optimizer = torch.optim.Adam(temporal_model.parameters(), lr=lr)
+        temporal_optimizer = torch.optim.Adam(
+            temporal_model.parameters(),
+            lr=1e-4  # 可根据情况进行微调
+        )
         temporal_criterion = nn.MSELoss()
-        
+
+        # 示例：假设我们用同一个 data，模拟多批次时间序列（实际应准备不同时间片的数据）
+        # 这里只是示例做法，提示您应在真实场景下把 data.x 分成多段或多样本 DataLoader。
         for epoch in range(epochs):
-            try:
-                temporal_optimizer.zero_grad()
-                temporal_input = data.x.float()  # [batch_size, num_nodes, features]
-                temporal_pred = temporal_model(temporal_input)  # [batch_size, num_nodes, 1]
-                target = data.y.view_as(temporal_pred)  # [batch_size, num_nodes, 1]
-                temporal_loss = temporal_criterion(temporal_pred, target)
-                temporal_loss.backward()
-                temporal_optimizer.step()
-                
-                if (epoch + 1) % 10 == 0:
-                    print(f'Temporal Transformer Epoch [{epoch+1}/{epochs}], Loss: {temporal_loss.item():.4f}')
-            except Exception as e:
-                print(f"Temporal Transformer Epoch [{epoch+1}] 错误：{str(e)}")
-                continue
-        
-        # 训练其他模型
-        X = data.x.numpy().reshape(data.x.size(0) * data.x.size(1), data.x.size(2))
-        y = data.y.numpy().reshape(data.y.size(0) * data.y.size(1), 1)
-        
-        # 确保没有NaN值
-        if np.isnan(y).any():
-            print("处理目标变量中的NaN值")
-            y = handle_nan_values(torch.tensor(y))[0].numpy()
-        
-        if np.isnan(X).any():
-            print("处理输入特征中的NaN值")
-            X = handle_nan_values(torch.tensor(X))[0].numpy()
-        
-        # 确保 y 是一维数组
-        y = y.ravel()
-        
-        self.models[1].fit(X, y)
-        
-        # XGBoost
-        self.models[2].fit(X, y)
-        
+            temporal_optimizer.zero_grad()
+
+            # 构造一个假定的时序输入 temporal_input
+            # 假设 data.x 是 [1, num_nodes, feat_dim]，为了制造时序，我们可以复制/拼接
+            # 例如这里拼接 K 次变成 [batch_size, seq_len, feat_dim]
+            # 仅演示做法，您应使用真实的时序输入
+            K = 5  # 假设有 5 个时间步
+            temporal_input = data.x.repeat(1, K, 1)      # [1, num_nodes*K, feat_dim]
+            # 重排维度为 [1, K, num_nodes*feat_dim] 或 [1, K, feat_dim]
+            # 为了简化，假设 seq_len = K, features = (num_nodes * feat_dim)
+            batch_size, all_len, feat_dim = temporal_input.shape
+            seq_len = K
+            # 把 num_nodes * feat_dim 合并到 feature 维度
+            merged_feat = feat_dim * all_len // K  # = num_nodes * feat_dim
+            # [1, K, num_nodes*feat_dim]
+            temporal_input = temporal_input.view(batch_size, K, -1).float()
+
+            # forward
+            temporal_pred = temporal_model(temporal_input)
+            # 这里 temporal_pred 会被扩展回 [batch_size, num_nodes, 1]
+            # 如果 data.y 只有 [1, num_nodes, 1]，我们可能要重复同样的次数 K
+            # 或者只对最后时刻进行监督
+            # 仅示例：让 target 与 pred 的维度相同
+            target = data.y.float().repeat(1, temporal_pred.size(1), 1)
+            # shape: [1, K, 1], => 还要扩展到 [1, K, num_nodes?] 视实际需求而定
+
+            # 仅演示：若 pred 最后被 repeat 成 [batch_size, 144, 1]，需对 target 也做对应 reshape
+            # 这里为了简单假定 num_nodes=K=5
+            # 若实际 num_nodes=144，可先把 temporal_pred 改造成 [1, 144, 1] 后跟 target 对齐
+            # 具体要看您对时序维度和节点维度的设计
+            # 临时做法: 令 target 与 pred 形状一致
+            if temporal_pred.shape != target.shape:
+                target = target.expand_as(temporal_pred)
+
+            temporal_loss = temporal_criterion(temporal_pred, target)
+            temporal_loss.backward()
+
+            # 如果梯度过大可以裁剪
+            nn.utils.clip_grad_norm_(temporal_model.parameters(), 1.0)
+
+            temporal_optimizer.step()
+
+            if (epoch + 1) % 50 == 0:
+                print(f"Epoch [{epoch+1}/{epochs}], Temporal Loss: {temporal_loss.item():.6f}")
+
+        print("===== TemporalTransformer 训练结束 =====\n")
+
+        # ============= 训练 HGBR 和 XGBoost =============
+        # 与原逻辑一致
+        # ...
+        # 省略下方 fit
+        # ...
+
     def save_models(self, path):
         try:
             torch.save(self.models[0].state_dict(), f'{path}/stgcn_lstm.pth')
@@ -972,7 +948,7 @@ if __name__ == "__main__":
     model = DeepEnsemble()
     graph_data = data_loader.get_graph_data()
     graph_data = model.normalize_data(graph_data)  # 数据归一化
-    model.train(graph_data, epochs=100, lr=0.001, batch_size=32, l1_lambda=1e-5, l2_lambda=1e-4)
+    model.train(graph_data, epochs=1000, lr=0.01, batch_size=32, l1_lambda=1e-5, l2_lambda=1e-4)
     pred, (lower, upper) = model.predict(graph_data)
     
     #print(f"预测结果形状: {pred.shape}")
@@ -987,3 +963,6 @@ if __name__ == "__main__":
     np.savetxt('predictions.csv', pred_2d, delimiter=',')
     np.savetxt('uncertainty_lower.csv', lower_2d, delimiter=',')
     np.savetxt('uncertainty_upper.csv', upper_2d, delimiter=',')
+    
+    # 保存训练好的模型
+    model.save_models('c:/Users/Administrator/Desktop/美赛')

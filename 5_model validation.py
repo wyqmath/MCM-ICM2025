@@ -8,9 +8,8 @@ def historical_backtest(data):
     """
     进行历史回溯测试。
     """
-    # 示例代码，您需要根据实际情况填充
-    # 假设使用 imfGDP 和 Host_Flag 预测 Medals
-    X = data[['imfGDP', 'Host_Flag']]
+    # 使用 imfGDP, unGDP, gdpPerCapita 和 Host_Flag 预测 Medals
+    X = data[['imfGDP', 'unGDP', 'gdpPerCapita', 'Host_Flag']]
     y = data['Medals']
     
     model = LinearRegression()
@@ -20,7 +19,7 @@ def historical_backtest(data):
     # 计算 SMAPE
     smape = 100/len(y) * np.sum(2 * np.abs(predictions - y) / (np.abs(y) + np.abs(predictions)))
     
-    # 示例中的区间得分，可以根据具体需求调整
+    # 计算 MAE
     mis = mean_absolute_percentage_error(y, predictions) * 100
     
     return smape, mis
@@ -34,7 +33,7 @@ def policy_shock_simulation(data):
     original_gdp = data['imfGDP'].mean()
     data['imfGDP'] *= 1.05  # GDP 增加 5%
     
-    X = data[['imfGDP', 'Host_Flag']]
+    X = data[['imfGDP', 'unGDP', 'gdpPerCapita', 'Host_Flag']]
     y = data['Medals']
     
     model = LinearRegression()
@@ -42,14 +41,15 @@ def policy_shock_simulation(data):
     predictions = model.predict(X)
     
     # 计算敏感性矩阵
-    S = np.array([[model.coef_[0]]])  # GDP 的系数
+    S = np.array([[model.coef_[0], model.coef_[1], model.coef_[2]]])  # 添加 unGDP 和 gdpPerCapita 的系数
     return S
 
 def causal_inference_validation(data, treatment, outcome, covariates):
     """
     进行因果推断验证。
     """
-    X = data[covariates]
+    # 添加所有相关协变量
+    X = data[covariates + ['unGDP', 'gdpPerCapita']]
     y = data[outcome]
     T = data[treatment]
     
@@ -83,7 +83,7 @@ def counterfactual_analysis(data, scenario):
     mask = (counter_data['IOC_Code'] == scenario['country']) & (counter_data['Year'] == scenario['year'])
     counter_data.loc[mask, scenario['treatment_var']] = scenario['treatment_value']
     
-    X = counter_data[['imfGDP', 'Host_Flag']]
+    X = counter_data[['imfGDP', 'unGDP', 'gdpPerCapita', 'Host_Flag']]
     y = counter_data['Medals']
     model = LinearRegression()
     model.fit(X, y)
@@ -117,8 +117,7 @@ def load_and_prepare_data(file_path='combined_data_merged.csv'):
         # 组合新的特征，例如总GDP
         data['totalGDP'] = data['imfGDP'] + data['unGDP'] + data['gdpPerCapita']
         
-        # 如果需要其他特征组合，可以在这里添加
-        # 例如，GDP人均比
+        # GDP人均比
         data['gdp_per_capita_ratio'] = data['imfGDP'] / data['gdpPerCapita']
         
         print("[load_and_prepare_data] 数据加载并处理完成。")
@@ -153,13 +152,13 @@ def main():
         # 2. 政策冲击模拟
         S = policy_shock_simulation(data)
         print("\n政策冲击敏感性矩阵:")
-        print("       GDP")
-        print(f"Medals {S[0,0]:.2f}")
+        print("       GDP     unGDP  gdpPerCapita")
+        print(f"Medals {S[0,0]:.2f}  {S[0,1]:.2f}  {S[0,2]:.2f}")
         
         # 3. 因果推断验证
         treatment = 'Host_Flag'
         outcome = 'Medals'
-        covariates = ['imfGDP']
+        covariates = ['imfGDP']  # 可以根据需要添加其他协变量
         causal_results = causal_inference_validation(data, treatment, outcome, covariates)
         print("\n因果推断结果:")
         print(f"平均处理效应 (ATE): {causal_results['ate']:.2f}")
@@ -179,7 +178,7 @@ def main():
         print(f"情景影响: {counterfactual['effect_of_hosting']}")
         
         # 预测 vs 实际
-        X = data[['imfGDP', 'Host_Flag']]
+        X = data[['imfGDP', 'unGDP', 'gdpPerCapita', 'Host_Flag']]
         y = data['Medals']
         model = LinearRegression()
         model.fit(X, y)
