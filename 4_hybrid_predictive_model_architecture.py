@@ -246,15 +246,48 @@ class Swish(nn.Module):
 
 def handle_nan_values(data):
     """处理数据中的NaN值，确保所有NaN都被处理"""
+    filled_count = 0  # 计数用0填充的NaN值数量
+
+    # 调试：检查处理前的数据状态
+    #print("开始处理 NaN 值前的数据概览：")
+    if isinstance(data, pd.DataFrame) or isinstance(data, pd.Series):
+        nan_counts = data.isna().sum()
+        #print(f"每列的NaN数量:\n{nan_counts}")
+        #print(f"总NaN数量: {data.isna().sum().sum()}")
+    elif isinstance(data, torch.Tensor):
+        nan_indices = torch.nonzero(torch.isnan(data), as_tuple=False)
+        #print(f"NaN的位置索引: {nan_indices}")
+        #print(f"总NaN数量: {torch.isnan(data).sum().item()}")
+    elif isinstance(data, np.ndarray):
+        nan_indices = np.argwhere(np.isnan(data))
+        #print(f"NaN的位置索引:\n{nan_indices}")
+        #print(f"总NaN数量: {np.isnan(data).sum()}")
+    else:
+        print("未知数据类型，无法打印NaN位置。")
+
     if isinstance(data, pd.DataFrame) or isinstance(data, pd.Series):
         # 首先尝试线性插值
         filled_data = data.interpolate(method='linear', limit_direction='both', axis=0)
+        #print(f"插值后NaN数量: {filled_data.isna().sum().sum()}")
+
         # 使用前向填充
         filled_data = filled_data.ffill()
+        #print(f"前向填充后NaN数量: {filled_data.isna().sum().sum()}")
+
         # 使用后向填充
         filled_data = filled_data.bfill()
+        #print(f"后向填充后NaN数量: {filled_data.isna().sum().sum()}")
+
+        # 计算填充的NaN数量
+        filled_count += filled_data.isna().sum().sum()  # 计算填充后仍然是NaN的数量
+
         # 如果仍然有NaN，用0填充
-        return filled_data.fillna(0)
+        filled_data = filled_data.fillna(0)
+        filled_count += (data.isna().sum().sum() - filled_data.isna().sum().sum())  # 计算用0填充的数量
+
+        #print(f"最终填充后的NaN数量: {filled_data.isna().sum().sum()}")
+        return filled_data, filled_count
+
     elif isinstance(data, torch.Tensor):
         # 检查数据维度
         if data.dim() == 3:
@@ -263,20 +296,13 @@ def handle_nan_values(data):
             reshaped_data = data.view(-1, data.size(-1))
             # 转换为DataFrame进行处理
             df = pd.DataFrame(reshaped_data.numpy())
-            filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
-            filled_df = filled_df.ffill()
-            filled_df = filled_df.bfill()
-            filled_df = filled_df.fillna(0)
-            # 转换回Tensor并重塑为原始形状
+            filled_df, count = handle_nan_values(df)  # 递归调用
             filled_tensor = torch.tensor(filled_df.values, dtype=data.dtype).view(batch_size, num_nodes, num_features)
-            return filled_tensor
+            return filled_tensor, count
         elif data.dim() == 2:
             df = pd.DataFrame(data.numpy())
-            filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
-            filled_df = filled_df.ffill()
-            filled_df = filled_df.bfill()
-            filled_df = filled_df.fillna(0)
-            return torch.tensor(filled_df.values, dtype=data.dtype)
+            filled_df, count = handle_nan_values(df)  # 递归调用
+            return torch.tensor(filled_df.values, dtype=data.dtype), count
         else:
             raise ValueError(f"Unsupported tensor dimensions: {data.dim()}")
     elif isinstance(data, np.ndarray):
@@ -285,19 +311,13 @@ def handle_nan_values(data):
             batch_size, num_nodes, num_features = data.shape
             reshaped_data = data.reshape(-1, data.shape[-1])
             df = pd.DataFrame(reshaped_data)
-            filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
-            filled_df = filled_df.ffill()
-            filled_df = filled_df.bfill()
-            filled_df = filled_df.fillna(0)
+            filled_df, count = handle_nan_values(df)  # 递归调用
             filled_tensor = torch.tensor(filled_df.values, dtype=torch.float32).view(batch_size, num_nodes, num_features)
-            return filled_tensor
+            return filled_tensor, count
         elif data.ndim == 2:
             df = pd.DataFrame(data)
-            filled_df = df.interpolate(method='linear', limit_direction='both', axis=0)
-            filled_df = filled_df.ffill()
-            filled_df = filled_df.bfill()
-            filled_df = filled_df.fillna(0)
-            return filled_df.values
+            filled_df, count = handle_nan_values(df)  # 递归调用
+            return filled_df.values, count
         else:
             raise ValueError(f"Unsupported numpy array dimensions: {data.ndim}")
     else:
@@ -320,20 +340,23 @@ class DeepEnsemble:
         ]
         
     def normalize_data(self, data):
+        # 归一化前检查
+        #print("归一化前的数据概览：")
+        #print(f"data.x 形状: {data.x.shape}")
+        #print(f"data.x 中的NaN总数: {torch.isnan(data.x).sum().item()}")
+
         # 对节点特征进行标准化
         data.x = (data.x - data.x.mean(dim=(0, 1))) / (data.x.std(dim=(0, 1), unbiased=False) + 1e-8)
         
+        # 归一化后检查
+        #print("归一化后的数据概览：")
+        #print(f"data.x 中的NaN总数: {torch.isnan(data.x).sum().item()}")
+
         # 对边属性进行标准化
         data.edge_attr = (data.edge_attr - data.edge_attr.mean()) / (data.edge_attr.std() + 1e-8)
         
-        # 不对目标值进行归一化
-        # data.y 保持原始尺度
-        
-        # 打印统计信息以验证
-        #print("After normalization:")
-        #print(f"data.x - mean: {data.x.mean().item():.4f}, std: {data.x.std().item():.4f}")
-        #print(f"data.edge_attr - mean: {data.edge_attr.mean().item():.4f}, std: {data.edge_attr.std().item():.4f}")
-        #print(f"data.y - mean: {data.y.mean().item():.4f}, std: {data.y.std().item():.4f}")
+        # 检查边属性中的NaN
+        #print(f"data.edge_attr 中的NaN总数: {torch.isnan(data.edge_attr).sum().item()}")
         
         return data
 
@@ -344,20 +367,22 @@ class DeepEnsemble:
         # 处理输入特征
         if torch.isnan(data.x).any():
             print(f"处理输入特征中的NaN值: {torch.isnan(data.x).sum().item()}")
-            data.x = handle_nan_values(data.x)
+            #print("输入特征数据:", data.x)  # 添加此行以输出输入特征数据
+            data.x, filled_count = handle_nan_values(data.x)
             print(f"处理后的NaN值数量: {torch.isnan(data.x).sum().item()}")
+            print(f"用0填充的NaN值数量: {filled_count}")
         
         # 处理目标值
         if torch.isnan(data.y).any():
-            print(f"处理目标值中的NaN值: {torch.isnan(data.y).sum().item()}")
-            data.y = handle_nan_values(data.y)
-            print(f"处理后的NaN值数量: {torch.isnan(data.y).sum().item()}")
+            #print(f"处理目标值中的NaN值: {torch.isnan(data.y).sum().item()}")
+            data.y, _ = handle_nan_values(data.y)
+            #print(f"处理后的NaN值数量: {torch.isnan(data.y).sum().item()}")
         
         # 处理边属性
         if torch.isnan(data.edge_attr).any():
-            print(f"处理边属性中的NaN值: {torch.isnan(data.edge_attr).sum().item()}")
-            data.edge_attr = handle_nan_values(data.edge_attr)
-            print(f"处理后的NaN值数量: {torch.isnan(data.edge_attr).sum().item()}")
+            #print(f"处理边属性中的NaN值: {torch.isnan(data.edge_attr).sum().item()}")
+            data.edge_attr, _ = handle_nan_values(data.edge_attr)
+            #print(f"处理后的NaN值数量: {torch.isnan(data.edge_attr).sum().item()}")
         
         # 数据归一化
         data = self.normalize_data(data)
@@ -510,11 +535,11 @@ class DeepEnsemble:
         # 确保没有NaN值
         if np.isnan(y).any():
             print("处理目标变量中的NaN值")
-            y = handle_nan_values(torch.tensor(y)).numpy()
+            y = handle_nan_values(torch.tensor(y))[0].numpy()
         
         if np.isnan(X).any():
             print("处理输入特征中的NaN值")
-            X = handle_nan_values(torch.tensor(X)).numpy()
+            X = handle_nan_values(torch.tensor(X))[0].numpy()
         
         # 确保 y 是一维数组
         y = y.ravel()
@@ -758,6 +783,11 @@ def build_spatio_temporal_graph(
     target_weights = torch.randn(node_features.size(1), 1)
     y = node_features @ target_weights  # [num_nodes, 1]
     
+    # 检查 y 是否包含 NaN
+    if torch.isnan(y).any():
+        print("警告：目标标签 y 中包含 NaN 值")
+        print(y)
+    
     # 扩展 y 到 [batch_size, num_nodes, 1]，假设 batch_size=1
     y = y.unsqueeze(0)  # [1, num_nodes, 1]
     
@@ -774,19 +804,41 @@ class OlympicDataLoader:
     
     def load_weight_matrix(self):
         df = pd.read_csv(f'{self.data_dir}/dynamic_weight_matrix_2028proj.csv')
-        print("权重矩阵数据：")
-        print(df.head())  # 输出前几行数据
-        
-        # 将数据转换为数值类型，强制转换错误为NaN
-        numeric_data = pd.to_numeric(df.values.flatten(), errors='coerce').reshape(df.shape)
-        
-        # 检查是否有NaN值
-        if np.isnan(numeric_data).any():
-            print("警告：权重矩阵中存在NaN值，将被替换为0。")
-            numeric_data = np.nan_to_num(numeric_data)  # 将NaN替换为0
-        
-        countries = df.columns.tolist()  # 假设国家名称在列名中
-        return torch.tensor(numeric_data, dtype=torch.float32), countries
+        #print("权重矩阵数据：")
+        #print(df.head())
+
+        # 分离非数值列（IOC_Code）与数值列（Year, Weight）
+        non_numeric_cols = ['IOC_Code']
+        numeric_cols = [col for col in df.columns if col not in non_numeric_cols]
+
+        # 检查数值列中的NaN值
+        if df[numeric_cols].isna().any().any():
+            print("数值列中存在NaN值，以下是包含NaN值的行：")
+            print(df[df[numeric_cols].isna().any(axis=1)])
+            # 将NaN值替换为0
+            df[numeric_cols] = df[numeric_cols].fillna(0)
+
+        # 检查重复的 IOC_Code 和 Year 组合
+        duplicates = df[df.duplicated(subset=['IOC_Code', 'Year'], keep=False)]
+        if not duplicates.empty:
+            print("发现重复的 IOC_Code 和 Year 组合，使用 pivot_table 进行聚合。")
+            print(duplicates)
+
+        # 使用 pivot_table 代替 pivot，并指定聚合函数
+        weight_matrix_pivot = df.pivot_table(
+            index='IOC_Code',
+            columns='Year',
+            values='Weight',
+            aggfunc='mean'  # 根据需要选择适当的聚合函数
+        ).fillna(0)
+
+        # 将权重矩阵转换为张量
+        numeric_data = weight_matrix_pivot.values  # 形状为 [国家数, 年份数]
+        weight_countries = weight_matrix_pivot.index.tolist()
+        numeric_data = np.nan_to_num(numeric_data)  # 确保无NaN
+        weight_matrix_tensor = torch.tensor(numeric_data, dtype=torch.float32)
+
+        return weight_matrix_tensor, weight_countries
     
     def load_coach_scores(self):
         data = np.genfromtxt(
@@ -796,8 +848,8 @@ class OlympicDataLoader:
             dtype=str,
             filling_values=''
         )
-        print("教练评分数据：")
-        print(data[:5])  # 输出前5行数据
+        #print("教练评分数据：")
+        #print(data[:5])  # 输出前5行数据
         
         # 提取有效的分数和国家
         scores = data[:, 1].astype(float)  # 假设分数在第二列
@@ -829,10 +881,10 @@ class OlympicDataLoader:
                 return float(x) if x else 0.0
             return float(x)
             
-        numeric_data = numeric_data.map(clean_value)
+        numeric_data = numeric_data.applymap(clean_value)
         
-        print("事件专业化数据：")
-        print(numeric_data.head())  # 输出前几行数据
+        #print("事件专业化数据：")
+        #print(numeric_data.head())  # 输出前几行数据
         return torch.tensor(numeric_data.values, dtype=torch.float32)
     
     def load_medal_correlation(self):
@@ -854,8 +906,8 @@ class OlympicDataLoader:
                                  columns=numeric_data.columns)
             numeric_data = pd.concat([numeric_data, padding])
             
-        print("奖牌相关性数据：")
-        print(df.head())  # 输出前几行数据
+        #print("奖牌相关性数据：")
+        #print(df.head())  # 输出前几行数据
         return torch.tensor(numeric_data.values, dtype=torch.float32)
     
     def load_trade_flow(self):
@@ -867,8 +919,8 @@ class OlympicDataLoader:
         numeric_data = df.apply(pd.to_numeric, errors='coerce')
         
         # Fill NaN values with 0 and convert to tensor
-        print("贸易流数据：")
-        print(df.head())  # 输出前几行数据
+        #print("贸易流数据：")
+        #print(df.head())  # 输出前几行数据
         return torch.tensor(numeric_data.fillna(0).values, dtype=torch.float32)
     
     def load_gdp(self):
@@ -880,8 +932,8 @@ class OlympicDataLoader:
         gdp_values = pd.to_numeric(df.iloc[:, 1], errors='coerce')
         
         # Fill NaN values with 0 and convert to tensor
-        print("GDP数据：")
-        print(df.head())  # 输出前几行数据
+        #print("GDP数据：")
+        #print(df.head())  # 输出前几行数据
         return torch.tensor(gdp_values.fillna(0).values, dtype=torch.float32)
         
     def get_graph_data(self):
@@ -892,6 +944,17 @@ class OlympicDataLoader:
         trade_flow = self.load_trade_flow()
         gdp = self.load_gdp()
         
+        '''
+        # 检查各个数据集是否包含 NaN
+        print("检查各个数据集中的 NaN 值：")
+        print(f"weight_matrix NaN: {torch.isnan(weight_matrix).sum().item()}")
+        print(f"coach_scores NaN: {torch.isnan(coach_scores).sum().item()}")
+        print(f"event_specialization NaN: {torch.isnan(event_specialization).sum().item()}")
+        print(f"medal_corr NaN: {torch.isnan(medal_corr).sum().item()}")
+        print(f"trade_flow NaN: {torch.isnan(trade_flow).sum().item()}")
+        print(f"gdp NaN: {torch.isnan(gdp).sum().item()}")
+        '''
+
         return build_spatio_temporal_graph(
             weight_matrix,
             weight_countries,

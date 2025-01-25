@@ -91,15 +91,74 @@ def main():
     # Validate and clean input data
     merged = validate_and_clean_data(merged)
     
-    # Calculate current year
+    # 读取国家映射数据
+    country_mapping = pd.read_csv('country_mapping.csv')
+    # 去除RawName中的多余空格
+    country_mapping['RawName'] = country_mapping['RawName'].str.strip()
+    
+    # 合并merged与country_mapping以获取IOC_Code
+    merged = pd.merge(merged, country_mapping, left_on='NOC', right_on='RawName', how='left')
+    
+    # 检查是否有未映射的NOC
+    unmapped = merged[merged['IOC_Code'].isnull()]['NOC'].unique()
+    if len(unmapped) > 0:
+        print(f"警告：以下NOC未找到IOC_Code映射: {unmapped}")
+    
+    # 聚合数据，确保每个IOC_Code和Year的组合是唯一的
+    aggregated = merged.groupby(['IOC_Code', 'Year'], as_index=False).agg({
+        'Total': 'sum',          # 奖牌总数求和
+        'imfGDP': 'mean',        # GDP取平均（或根据需要选择其他聚合方式）
+        'population': 'mean'     # 人口取平均
+    })
+    
+    # 计算当前年份
     current_year = datetime.now().year
     
-    # Calculate weights using vectorized approach
-    weights = calculate_weight_vectorized(merged, current_year, DECAY_CONSTANT)
+    # 计算权重
+    weights = calculate_weight_vectorized(aggregated, current_year, DECAY_CONSTANT)
     
-    # Store results
-    result = merged[['NOC', 'Year']].copy()
+    # 存储结果
+    result = aggregated[['IOC_Code', 'Year']].copy()
     result['Weight'] = weights
+    
+    # 插值处理
+    result = result.sort_values(['IOC_Code', 'Year'])
+    
+    # 定义插值函数
+    def interpolate_weights(weights, years):
+        # 创建临时DataFrame
+        temp_df = pd.DataFrame({
+            'Weight': weights,
+            'Year': pd.to_datetime(years, format='%Y')
+        }).set_index('Year')
+        
+        # 插值并返回值
+        return temp_df['Weight'].interpolate(method='time', limit_direction='both').values
+    
+    # 检查插值前的NaN值
+    if result['Weight'].isnull().any():
+        print(f"Found {result['Weight'].isnull().sum()} NaN values before interpolation")
+    
+    # 在每个组内应用插值
+    result['Weight'] = result.groupby('IOC_Code').apply(
+        lambda x: interpolate_weights(x['Weight'], x['Year'])
+    ).explode().reset_index(drop=True)
+    
+    # 验证插值后的NaN值
+    if result['Weight'].isnull().any():
+        print(f"Warning: {result['Weight'].isnull().sum()} NaN values remain after interpolation")
+        # 使用组的均值填充剩余的NaN值
+        result['Weight'] = result.groupby('IOC_Code')['Weight'].transform(
+            lambda x: x.fillna(x.mean())
+        )
+    
+    # 最终验证
+    if result['Weight'].isnull().any():
+        raise ValueError(f"{result['Weight'].isnull().sum()} NaN values remain after all processing")
+    
+    # 选择需要保存的列
+    result = result[['IOC_Code', 'Year', 'Weight']]
+    
     result.to_csv('dynamic_weight_matrix_2028proj.csv', index=False)
 
 # 检查生成的文件中是否有NaN值
